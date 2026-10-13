@@ -1,0 +1,762 @@
+[
+  {
+    "Id": "szamlazzhu-standard",
+    "Name": "Számlázz.hu – általános",
+    "Enabled": true,
+    "Notes": "Sok kisvállalkozás és egyéni vállalkozó számlázóprogramja. Kibocsátó = az eladói blokk első sora (fent középen); a vessző utáni rész (pl. egyéni vállalkozó nyilvántartási száma) levágva.",
+    "IdentifierRules": [
+      {
+        "Text": "A bizonylatot a Számlázz.hu készítette"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Region",
+      "Region": {
+        "X": 0.22,
+        "Y": 0.03,
+        "W": 0.42,
+        "H": 0.08
+      },
+      "Regex": "^([^,\\n]{3,})"
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Sorszám",
+      "LabelDirection": "Right",
+      "Regex": "^(\\S{3,})",
+      "RemoveSpaces": true
+    }
+  },
+  {
+    "Id": "szamlazzhu-classic",
+    "Name": "Számlázz.hu – régi",
+    "Enabled": true,
+    "Notes": "Régebbi Számlázz.hu sablon: 'Számlakibocsátó:' blokk bal oldalt, 'Számlaszám:' jobbra fent.",
+    "IdentifierRules": [
+      {
+        "Text": "Számlakibocsátó"
+      },
+      {
+        "Text": "szamlazz.hu"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Label",
+      "LabelText": "Számlakibocsátó",
+      "LabelDirection": "Below"
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Számlaszám",
+      "LabelDirection": "Right",
+      "Regex": "(\\S*\\d\\S*)",
+      "RemoveSpaces": true
+    }
+  },
+  {
+    "Id": "billingo",
+    "Name": "Billingo",
+    "Enabled": true,
+    "Notes": "Billingo online számlázó. A számlaszám a 'Számla' cím alatt, a kibocsátó az 'ELADÓ' alatt.",
+    "IdentifierRules": [
+      {
+        "Text": "Billingo"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Label",
+      "LabelText": "ELADÓ",
+      "LabelDirection": "Below"
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Számla",
+      "LabelDirection": "Below",
+      "Regex": "^(\\S{3,})",
+      "RemoveSpaces": true
+    }
+  },
+  {
+    "Id": "naturasoft",
+    "Name": "NaturaSoft",
+    "Enabled": true,
+    "Notes": "NaturaSoft Készlet és Számla. Kibocsátó a 'Számla kiállító adatai' alatt, számlaszám a 'Számlaszám' alatt.",
+    "IdentifierRules": [
+      {
+        "Text": "NATURASOFT"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Label",
+      "LabelText": "Számla kiállító adatai",
+      "LabelDirection": "Below"
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Számlaszám",
+      "LabelDirection": "Below",
+      "Regex": "(\\d{4}\\s*/\\s*\\d+)",
+      "RemoveSpaces": true,
+      "FixOcrDigits": true
+    }
+  },
+  {
+    "Id": "okos-ugyvitel",
+    "Name": "Okos-Ügyvitel (NetSoft)",
+    "Enabled": true,
+    "IdentifierRules": [
+      {
+        "Text": "NetSoft Informatika | Okos-Ügyvitel | okosugyvitel"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Label",
+      "LabelText": "Szállító",
+      "LabelDirection": "Below"
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Bizonylat sorszáma",
+      "LabelDirection": "Right",
+      "Regex": "^(\\S{3,})",
+      "RemoveSpaces": true
+    },
+    "Notes": "NetSoft Okos-Ügyvitel. Kibocsátó a 'Szállító' alatt."
+  },
+  {
+    "Id": "fr-soft",
+    "Name": "FR-SOFT (autószerviz)",
+    "Enabled": true,
+    "Notes": "FR-SOFT autószerviz-program. A számlaszám betűelőtag + számjegyek; a számjegyek közé olvasott betűket javítja.",
+    "IdentifierRules": [
+      {
+        "Text": "FR-SOFT"
+      },
+      {
+        "Text": "Számlát átvettem"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Label",
+      "LabelText": "SZÁLLÍTÓ",
+      "LabelDirection": "Below"
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Számlaszám",
+      "LabelDirection": "Right",
+      "Regex": "(?<p>[A-Z]{1,2})\\s*(?<digits>[0-9OoIl|](?:\\s?[0-9OoIl|]){4,8})",
+      "Format": "${p}${digits}",
+      "RemoveSpaces": true,
+      "FixOcrDigits": true
+    }
+  },
+  {
+    "Id": "vectory",
+    "Name": "Vectory (Vector Kft.)",
+    "Enabled": true,
+    "Notes": "Vectory integrált vállalatirányítási rendszer (Vector Kft.), sok cég használja. Számlák és jóváírók; a 'Folytatólap' oldalak automatikusan a számlához kerülnek. Kibocsátó = az eladói doboz első cégneve.",
+    "IdentifierRules": [
+      {
+        "Text": "Vectory | Vector Kft"
+      },
+      {
+        "Text": "Fizetés módja"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Region",
+      "Region": {
+        "X": 0.02,
+        "Y": 0.03,
+        "W": 0.47,
+        "H": 0.2
+      },
+      "Regex": "^(?:[^\\n:]{0,25}?(?:n[ée]v|neve|c[ée]gn[ée]v)\\s*:\\s*)?(?:digitally signed by\\s+)?(?:\\S+\\.(?:hu|com|eu|net)\\s+)?[^\\p{L}\\p{Nd}\\n\\\"„]{0,3}(?<value>(?-i:(?!(?:Az?|Ez|Egy) )[A-ZÁÉÍÓÖŐÚÜŰ0-9\\\"„])[^\\n:,]{1,60}?\\b(?:K\\s?[fti1l]\\s?[ti1l]|[ZI2]\\s?[rt]\\s?t|N\\s?y\\s?r\\s?t|B\\s?t|K\\s?k\\s?t)\\b\\.?)",
+      "ExcludeReceiver": true
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Számlasorszám",
+      "LabelDirection": "Below",
+      "Regex": "(\\d{5})\\s*[/1lI|]?\\s*(\\d{2})\\s*-\\s*([A-Z]{2})",
+      "Format": "$1/$2-$3",
+      "RemoveSpaces": true,
+      "Fallback": {
+        "Mode": "Label",
+        "LabelText": "Számlasorszám",
+        "LabelDirection": "Below",
+        "Regex": "(?<value>(?=[^\\s]*\\d)[A-Z0-9][A-Z0-9/._-]{4,})",
+        "RemoveSpaces": true
+      }
+    }
+  },
+  {
+    "Id": "juta-soft",
+    "Name": "JUTA-soft (JUTA-Raktár)",
+    "Enabled": true,
+    "Notes": "Kisbolti program blokkméretű számlákkal. Kibocsátó = az első cégformát (Kft., Bt. …) tartalmazó sor felül.",
+    "IdentifierRules": [
+      {
+        "Text": "juta-soft"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Region",
+      "Region": {
+        "X": 0,
+        "Y": 0,
+        "W": 1,
+        "H": 0.15
+      },
+      "Regex": "^(?:[^\\n:]{0,25}?(?:n[ée]v|neve|c[ée]gn[ée]v)\\s*:\\s*)?(?:digitally signed by\\s+)?(?:\\S+\\.(?:hu|com|eu|net)\\s+)?[^\\p{L}\\p{Nd}\\n\\\"„]{0,3}(?<value>(?-i:(?!(?:Az?|Ez|Egy) )[A-ZÁÉÍÓÖŐÚÜŰ0-9\\\"„])[^\\n:,]{1,60}?\\b(?:K\\s?[fti1l]\\s?[ti1l]|[ZI2]\\s?[rt]\\s?t|N\\s?y\\s?r\\s?t|B\\s?t|K\\s?k\\s?t)\\b\\.?)",
+      "ExcludeReceiver": true
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Sorszám",
+      "LabelDirection": "Right",
+      "Regex": "(?<y>\\d{4})\\s*/\\s*(?<letters>[a-z0-9]{2,8})\\s*/\\s*(?<digits>[0-9OoIl]+)",
+      "Format": "${y}/${letters}/${digits}",
+      "RemoveSpaces": true,
+      "FixOcrDigits": true
+    }
+  },
+  {
+    "Id": "nav-penztargep",
+    "Name": "Pénztárgépes nyugta (NAV)",
+    "Enabled": true,
+    "Notes": "Online pénztárgéppel nyomtatott egyszerűsített számlák (áruházláncok, benzinkutak, posta …). Felismerés: NAV ellenőrző kód, az AP-számos számlaszám-minta, vagy – csak keskeny, blokk alakú oldalon – a pénztárgép AP-kódja. Kibocsátó = az első cégnév felül. Számlaszám: AP-szám/zárás/sorszám (pl. A12345678/0123/00001); más formátumú számot a tartalék szabály olvas a 'Számlaszám' címke mellől (csak számjegyek és perjelek).",
+    "IdentifierRules": [
+      {
+        "Text": "NAV Ellenőrző kód | re:\\bNAV\\s?El\\S{0,9}\\s?k[oó]d | re:\\b[A-Z]\\s?[0-9OIl](?:\\s?[0-9OIlA]){7}\\s*/\\s*[0-9OIlU]{4}\\s*/\\s*[0-9OIlU]{5}\\b | narrow:re:\\b(?:AP|[A-Z])?\\s?A\\d{8}\\b"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Region",
+      "Region": {
+        "X": 0,
+        "Y": 0,
+        "W": 1,
+        "H": 0.13
+      },
+      "Regex": "^(?:[^\\n:]{0,25}?(?:n[ée]v|neve|c[ée]gn[ée]v)\\s*:\\s*)?(?:digitally signed by\\s+)?(?:\\S+\\.(?:hu|com|eu|net)\\s+)?[^\\p{L}\\p{Nd}\\n\\\"„]{0,3}(?<value>(?-i:(?!(?:Az?|Ez|Egy) )[A-ZÁÉÍÓÖŐÚÜŰ0-9\\\"„])[^\\n:,]{1,60}?\\b(?:K\\s?[fti1l]\\s?[ti1l]|[ZI2]\\s?[rt]\\s?t|N\\s?y\\s?r\\s?t|B\\s?t|K\\s?k\\s?t)\\b\\.?)",
+      "ExcludeReceiver": true
+    },
+    "InvoiceNumber": {
+      "Mode": "PageRegex",
+      "Regex": "\\b(?<p>[A-Z])\\s?(?<digits>[0-9OoIl|](?:\\s?[0-9OoIlA|]){7})\\s*/\\s*(?<digitsZ>[0-9OoIlU|]{4})\\s*/\\s*(?<digitsS>[0-9OoIlU|]{5})\\b",
+      "Format": "${p}${digits}/${digitsZ}/${digitsS}",
+      "RemoveSpaces": true,
+      "FixOcrDigits": true,
+      "Fallback": {
+        "Mode": "Label",
+        "LabelText": "Számlaszám | Számla sorszáma | Számla száma | Sorszám",
+        "LabelDirection": "Auto",
+        "Regex": "(?<![0-9A-Za-z/._-])(?!(?:19|20)\\d{2}/\\d{2}/\\d{2}(?!\\d))(?<value>\\d{3,5}(?:/\\d{1,6}){1,3})(?![0-9A-Za-z/])"
+      }
+    }
+  },
+  {
+    "Id": "fugea",
+    "Name": "Előnyomott számlatömb (FUGEA)",
+    "Enabled": true,
+    "Notes": "Kézzel kitöltött 'Készpénzfizetési számla' tömbök. A nyomtatott sorszámot olvassa; a kézzel írt kibocsátót az OCR nem tudja – az ellenőrzésnél kell beírni.",
+    "IdentifierRules": [
+      {
+        "Text": "FUGEA"
+      },
+      {
+        "Text": "Készpénzfizetési számla | számlakibocsátó neve"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Region",
+      "Region": {
+        "X": 0.02,
+        "Y": 0.12,
+        "W": 0.45,
+        "H": 0.12
+      },
+      "Regex": "^(?:[^\\n:]{0,25}?(?:n[ée]v|neve|c[ée]gn[ée]v)\\s*:\\s*)?(?:digitally signed by\\s+)?(?:\\S+\\.(?:hu|com|eu|net)\\s+)?[^\\p{L}\\p{Nd}\\n\\\"„]{0,3}(?<value>(?-i:(?!(?:Az?|Ez|Egy) )[A-ZÁÉÍÓÖŐÚÜŰ0-9\\\"„])[^\\n:,]{1,60}?\\b(?:K\\s?[fti1l]\\s?[ti1l]|[ZI2]\\s?[rt]\\s?t|N\\s?y\\s?r\\s?t|B\\s?t|K\\s?k\\s?t)\\b\\.?)",
+      "ExcludeReceiver": true
+    },
+    "InvoiceNumber": {
+      "Mode": "PageRegex",
+      "Regex": "FUGEA\\s*(?<digits>[0-9OoIl](?:\\s?[0-9OoIl]){6})",
+      "Format": "${digits}",
+      "RemoveSpaces": true,
+      "FixOcrDigits": true
+    }
+  },
+  {
+    "Id": "mvm-libra",
+    "Name": "MVM LIBRA",
+    "Enabled": true,
+    "Notes": "Az MVM-csoport LIBRA számlázó rendszere (áram / gáz). A részletező oldalakat ('Telephelyi részletező') a számlaszám alapján összevonja.",
+    "IdentifierRules": [
+      {
+        "Text": "LIBRA számlázási rendszer"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Region",
+      "Region": {
+        "X": 0.03,
+        "Y": 0.07,
+        "W": 0.45,
+        "H": 0.07
+      },
+      "Regex": "^(?:[^\\n:]{0,25}?(?:n[ée]v|neve|c[ée]gn[ée]v)\\s*:\\s*)?(?:digitally signed by\\s+)?(?:\\S+\\.(?:hu|com|eu|net)\\s+)?[^\\p{L}\\p{Nd}\\n\\\"„]{0,3}(?<value>(?-i:(?!(?:Az?|Ez|Egy) )[A-ZÁÉÍÓÖŐÚÜŰ0-9\\\"„])[^\\n:,]{1,60}?\\b(?:K\\s?[fti1l]\\s?[ti1l]|[ZI2]\\s?[rt]\\s?t|N\\s?y\\s?r\\s?t|B\\s?t|K\\s?k\\s?t)\\b\\.?)",
+      "ExcludeReceiver": true
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Számla száma | Számla sorszáma",
+      "LabelDirection": "Right",
+      "Regex": "^(\\S{6,})",
+      "RemoveSpaces": true
+    }
+  },
+  {
+    "Id": "webshop-ertekesites",
+    "Name": "Webshop (Sorszám / Eladó alul)",
+    "Enabled": true,
+    "Notes": "Webshop-számla: számlaszám jobbra fent a 'Sorszám' után, az eladói blokk az 'Eladó' alatt az oldal alsó felében.",
+    "IdentifierRules": [
+      {
+        "Text": "A bizonylat a következő értékesítésből készült"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Label",
+      "LabelText": "Eladó",
+      "LabelDirection": "Below"
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Sorszám",
+      "LabelDirection": "Right",
+      "Regex": "^(\\S{3,})",
+      "RemoveSpaces": true
+    }
+  },
+  {
+    "Id": "metro",
+    "Name": "METRO (saját rendszer)",
+    "Enabled": true,
+    "Notes": "METRO Kereskedelmi Kft. áruházi számlák. A számla utáni oldal általában reklám (folytatólapként marad). Számlaszám = a teljes nyomtatott szám a pénztári hivatkozás nélkül, pl. 2026-0/0(11) 0012/003456.",
+    "IdentifierRules": [
+      {
+        "Text": "METRO KERESKEDELMI KFT"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Fixed",
+      "FixedValue": "METRO Kereskedelmi Kft."
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Számlaszám",
+      "LabelDirection": "Right",
+      "Regex": "(?<digitsY>(?:19|20)\\d{2})\\s*-\\s*(?<digitsA>[0-9OoU])\\s*/\\s*(?<digitsB>[0-9OoU])\\s*\\(\\s*(?<digitsT>[0-9OoIl]{1,3})\\s*\\)\\s*(?<digitsR>[0-9OoIlU]{4})\\s*/\\s*(?<digitsN>[0-9OoIlU]{6})",
+      "RemoveSpaces": true,
+      "FixOcrDigits": true,
+      "Format": "${digitsY}-${digitsA}/${digitsB}(${digitsT}) ${digitsR}/${digitsN}"
+    }
+  },
+  {
+    "Id": "telekom",
+    "Name": "Magyar Telekom (saját rendszer)",
+    "Enabled": true,
+    "Notes": "Vezetékes és mobil számlák. A cégnév minden oldalon szerepel; a szabály csak a fejlécet nézi, így a következő oldalak a számlához kerülnek.",
+    "IdentifierRules": [
+      {
+        "Text": "Magyar Telekom Nyrt",
+        "Region": {
+          "X": 0,
+          "Y": 0,
+          "W": 1,
+          "H": 0.2
+        }
+      }
+    ],
+    "Issuer": {
+      "Mode": "Fixed",
+      "FixedValue": "Magyar Telekom Nyrt."
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Számla sorszám | Számla száma",
+      "LabelDirection": "Right",
+      "Regex": "(?<digits>\\d(?:\\s?[0-9OoIl]){15})",
+      "RemoveSpaces": true,
+      "FixOcrDigits": true
+    }
+  },
+  {
+    "Id": "fleetcor",
+    "Name": "FleetCor (saját rendszer)",
+    "Enabled": true,
+    "Notes": "Fekvő oldalak, automatikus forgatással. Az azonos számla oldalait számlaszám szerint vonja össze. A 'Számlakivonat' oldalaknak nincs számlaszáma, ezek a hibák közé kerülnek.",
+    "IdentifierRules": [
+      {
+        "Text": "FleetCor Hungary Kft"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Fixed",
+      "FixedValue": "FleetCor Hungary Kft."
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Számla száma",
+      "LabelDirection": "Right",
+      "Regex": "^([A-Z]\\d{7,})",
+      "RemoveSpaces": true,
+      "FixOcrDigits": true
+    }
+  },
+  {
+    "Id": "rlb60",
+    "Name": "RLB-60 Számlázó",
+    "Enabled": true,
+    "IsFallback": false,
+    "Notes": "RLB-60 Bt. számlázó- és készletnyilvántartó programja. Kibocsátó az 'Eladó:' mellett, számlaszám a 'Számla sorszám' alatt: 2026/01234 (az OCR a perjelet gyakran 1-esnek olvassa) vagy a cég saját formátuma (pl. ABC-0123/2026) a tartalék szabállyal. Az eredeti és a '2. példány' azonos számú, ezeket összevonja.",
+    "IdentifierRules": [
+      {
+        "Text": "RLB-60"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Label",
+      "LabelText": "Eladó",
+      "LabelDirection": "Auto",
+      "Regex": "^(?:[^\\n:]{0,25}?(?:n[ée]v|neve|c[ée]gn[ée]v)\\s*:\\s*)?(?:digitally signed by\\s+)?(?:\\S+\\.(?:hu|com|eu|net)\\s+)?[^\\p{L}\\p{Nd}\\n\\\"„]{0,3}(?<value>(?-i:(?!(?:Az?|Ez|Egy) )[A-ZÁÉÍÓÖŐÚÜŰ0-9\\\"„])[^\\n:,]{1,60}?\\b(?:K\\s?[fti1l]\\s?[ti1l]|[ZI2]\\s?[rt]\\s?t|N\\s?y\\s?r\\s?t|B\\s?t|K\\s?k\\s?t)\\b\\.?)",
+      "ExcludeReceiver": true
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Számla sorszám | Számla sorszáma",
+      "LabelDirection": "Auto",
+      "Regex": "\\b(?<digitsY>20\\d{2})\\s*(?:[/\\]|[1Il|](?=[0-9OoIl]{5}\\b))\\s*(?<digits>[0-9OoIl]{5})\\b",
+      "Format": "${digitsY}/${digits}",
+      "FixOcrDigits": true,
+      "Fallback": {
+        "Mode": "Label",
+        "LabelText": "Számla sorszám | Számla sorszáma",
+        "LabelDirection": "Auto",
+        "Regex": "(?<![0-9A-Za-z/._-])(?!\\d{8}-\\d{8})(?!\\d{8}-\\d-\\d{2})(?!\\d{4}[./-](?:0[1-9]|1[0-2])[./-](?:0[1-9]|[12]\\d|3[01])(?![0-9/]))(?!(?:0[1-9]|[12]\\d|3[01])[./-](?:0[1-9]|1[0-2])[./-]\\d{4}(?![0-9/]))(?!(?:19|20)\\d{2}\\.?(?![0-9A-Za-z/_-]))(?!\\d{1,4}/(?:19|20)\\d{2}\\.?\\s*\\()(?![A-Z0-9/._-]*@)(?<value>(?=(?:[^\\s\\d]*\\d){3})[A-Z0-9][A-Z0-9/._-]{3,})"
+      }
+    }
+  },
+  {
+    "Id": "sap-business-one",
+    "Name": "SAP Business One (IFSZ)",
+    "Enabled": true,
+    "IsFallback": false,
+    "Notes": "SAP Business One (IFSZ honosítás) által nyomtatott számlák. A további oldalak ('Oldal: 2/3') megismétlik a fejlécet, folytatólapként maradnak. Kibocsátó a 'Szállító' alatt, számlaszám a 'Sorszáma' mellett.",
+    "IdentifierRules": [
+      {
+        "Text": "SAP Business One"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Label",
+      "LabelText": "Szállító",
+      "LabelDirection": "Below",
+      "Regex": "^(?:[^\\n:]{0,25}?(?:n[ée]v|neve|c[ée]gn[ée]v)\\s*:\\s*)?(?:digitally signed by\\s+)?(?:\\S+\\.(?:hu|com|eu|net)\\s+)?[^\\p{L}\\p{Nd}\\n\\\"„]{0,3}(?<value>(?-i:(?!(?:Az?|Ez|Egy) )[A-ZÁÉÍÓÖŐÚÜŰ0-9\\\"„])[^\\n:,]{1,60}?\\b(?:K\\s?[fti1l]\\s?[ti1l]|[ZI2]\\s?[rt]\\s?t|N\\s?y\\s?r\\s?t|B\\s?t|K\\s?k\\s?t)\\b\\.?)",
+      "ExcludeReceiver": true
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Sorszáma",
+      "LabelDirection": "Right",
+      "Regex": "\\b(?<digits>[0-9OoIl]{6,12})\\b",
+      "FixOcrDigits": true,
+      "Fallback": {
+        "Mode": "Label",
+        "LabelText": "Számlaszám | Számla sorszáma | Számla száma | Számlasorszám | Számla szám | Sorszám | Bizonylatszám | Invoice No | Invoice number",
+        "LabelDirection": "Auto",
+        "Regex": "(?<![0-9A-Za-z/._-])(?!\\d{8}-\\d{8})(?!\\d{8}-\\d-\\d{2})(?!\\d{4}[./-](?:0[1-9]|1[0-2])[./-](?:0[1-9]|[12]\\d|3[01])(?![0-9/]))(?!(?:0[1-9]|[12]\\d|3[01])[./-](?:0[1-9]|1[0-2])[./-]\\d{4}(?![0-9/]))(?!(?:19|20)\\d{2}\\.?(?![0-9A-Za-z/_-]))(?!\\d{1,4}/(?:19|20)\\d{2}\\.?\\s*\\()(?![A-Z0-9/._-]*@)(?<value>(?=(?:[^\\s\\d]*\\d){3})[A-Z0-9][A-Z0-9/._-]{3,})"
+      }
+    }
+  },
+  {
+    "Id": "molgroup-cards",
+    "Name": "MOLGROUP Cards (üzemanyagkártya-számla)",
+    "Enabled": true,
+    "IsFallback": false,
+    "Notes": "MOL Downstream üzemanyagkártya-számlák (MOLGROUP CARDS). Számlaszám = a 10 jegyű szám a 'Számla/Invoice' alatt. A 'Számla melléklet' (kártyakivonat) oldalak nem számlák, ez a sablon nem ismeri fel őket.",
+    "IdentifierRules": [
+      {
+        "Text": "MOLGROUP CARDS | molgroupcards.com"
+      },
+      {
+        "Text": "re:Sz[áa]mla\\s*/\\s*[Il1|]nvoice"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Label",
+      "LabelText": "Szállító/Seller | Szállító",
+      "LabelDirection": "Below",
+      "Regex": "^(?:[^\\n:]{0,25}?(?:n[ée]v|neve|c[ée]gn[ée]v)\\s*:\\s*)?(?:digitally signed by\\s+)?(?:\\S+\\.(?:hu|com|eu|net)\\s+)?[^\\p{L}\\p{Nd}\\n\\\"„]{0,3}(?<value>(?-i:(?!(?:Az?|Ez|Egy) )[A-ZÁÉÍÓÖŐÚÜŰ0-9\\\"„])[^\\n:,]{1,60}?\\b(?:K\\s?[fti1l]\\s?[ti1l]|[ZI2]\\s?[rt]\\s?t|N\\s?y\\s?r\\s?t|B\\s?t|K\\s?k\\s?t)\\b\\.?)",
+      "ExcludeReceiver": true
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Számla/Invoice",
+      "LabelDirection": "Below",
+      "Regex": "(?<![0-9])(?<digits>[0-9OoIl]{10})(?![0-9])",
+      "FixOcrDigits": true
+    }
+  },
+  {
+    "Id": "dynamics-bc",
+    "Name": "Microsoft Dynamics 365 Business Central",
+    "Enabled": true,
+    "IsFallback": false,
+    "Notes": "Microsoft Dynamics 365 Business Central-lal készült számlák. Számlaszám a 'Szám / No.:' mellett (pl. KSZLA_XX/26-01234); az eredetit és a másolatot számuk alapján összevonja.",
+    "IdentifierRules": [
+      {
+        "Text": "Microsoft Dynamics 365 Business Central | Dynamics 365 Business Central"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Label",
+      "LabelText": "Szállító / Vendor | Szállító",
+      "LabelDirection": "Below",
+      "Regex": "^(?:[^\\n:]{0,25}?(?:n[ée]v|neve|c[ée]gn[ée]v)\\s*:\\s*)?(?:digitally signed by\\s+)?(?:\\S+\\.(?:hu|com|eu|net)\\s+)?[^\\p{L}\\p{Nd}\\n\\\"„]{0,3}(?<value>(?-i:(?!(?:Az?|Ez|Egy) )[A-ZÁÉÍÓÖŐÚÜŰ0-9\\\"„])[^\\n:,]{1,60}?\\b(?:K\\s?[fti1l]\\s?[ti1l]|[ZI2]\\s?[rt]\\s?t|N\\s?y\\s?r\\s?t|B\\s?t|K\\s?k\\s?t)\\b\\.?)",
+      "ExcludeReceiver": true
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Szám / No. | Szám / No",
+      "LabelDirection": "Right",
+      "Regex": "(?<value>(?=(?:[^\\s\\d]*\\d){3})[A-Z0-9][A-Z0-9_/.-]{4,})",
+      "Fallback": {
+        "Mode": "Label",
+        "LabelText": "Számlaszám | Számla sorszáma | Számla száma | Számlasorszám | Számla szám | Sorszám | Bizonylatszám | Invoice No | Invoice number | Számla / Invoice",
+        "LabelDirection": "Auto",
+        "Regex": "(?<![0-9A-Za-z/._-])(?!\\d{8}-\\d{8})(?!\\d{8}-\\d-\\d{2})(?!\\d{4}[./-](?:0[1-9]|1[0-2])[./-](?:0[1-9]|[12]\\d|3[01])(?![0-9/]))(?!(?:0[1-9]|[12]\\d|3[01])[./-](?:0[1-9]|1[0-2])[./-]\\d{4}(?![0-9/]))(?!(?:19|20)\\d{2}\\.?(?![0-9A-Za-z/_-]))(?!\\d{1,4}/(?:19|20)\\d{2}\\.?\\s*\\()(?![A-Z0-9/._-]*@)(?<value>(?=(?:[^\\s\\d]*\\d){3})[A-Z0-9][A-Z0-9/._-]{3,})"
+      }
+    }
+  },
+  {
+    "Id": "znet-telekom",
+    "Name": "ZNET Telekom (saját rendszer)",
+    "Enabled": true,
+    "IsFallback": false,
+    "Notes": "ZNET Telekom e-számlák. A fejlécben lévő számot az OCR gyakran szétszedi ('2026/20 123'), ezért először a fizetési megjegyzést olvassa: 'tüntesse fel a számla sorszámát: 2026/201234'.",
+    "IdentifierRules": [
+      {
+        "Text": "ZNET Telekom"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Fixed",
+      "FixedValue": "ZNET Telekom Zrt."
+    },
+    "InvoiceNumber": {
+      "Mode": "PageRegex",
+      "Regex": "sorsz[áa]m[áa]t\\s*[.:]?\\s*(?<digitsY>20\\d{2})\\s*[/:.]\\s*(?<digits>[0-9OoIl]{6})(?![0-9])",
+      "Format": "${digitsY}/${digits}",
+      "FixOcrDigits": true,
+      "Fallback": {
+        "Mode": "Label",
+        "LabelText": "SZÁMLA SORSZÁMA | INVOICE NO",
+        "LabelDirection": "Below",
+        "Regex": "(?<digitsY>20\\d{2})\\s*/\\s*(?<digits>[0-9]{6})(?![0-9])",
+        "Format": "${digitsY}/${digits}"
+      }
+    }
+  },
+  {
+    "Id": "diamond-studio",
+    "Name": "Diamond Stúdió",
+    "Enabled": true,
+    "IsFallback": false,
+    "Notes": "Diamond Stúdió programmal készült számlák. Számlaszám a 'Számla száma' alatt: 26/001234 formátumban mindig 6 számjegy a perjel után – a rövidebb OCR-olvasat ('26/00 234') hiba, újraolvassa; betűelőtagos formátumok (pl. ABC26/0110) a tartalék szabállyal.",
+    "IdentifierRules": [
+      {
+        "Text": "Diamond Stúdió programjával | diamond.hu"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Label",
+      "LabelText": "Eladó | Szállító | Számlakibocsátó | Számla kibocsátója | Kibocsátó | Szolgáltató | Seller | Supplier",
+      "LabelDirection": "Auto",
+      "Regex": "^(?:[^\\n:]{0,25}?(?:n[ée]v|neve|c[ée]gn[ée]v)\\s*:\\s*)?(?:digitally signed by\\s+)?(?:\\S+\\.(?:hu|com|eu|net)\\s+)?[^\\p{L}\\p{Nd}\\n\\\"„]{0,3}(?<value>(?-i:(?!(?:Az?|Ez|Egy) )[A-ZÁÉÍÓÖŐÚÜŰ0-9\\\"„])[^\\n:,]{1,60}?\\b(?:K\\s?[fti1l]\\s?[ti1l]|[ZI2]\\s?[rt]\\s?t|N\\s?y\\s?r\\s?t|B\\s?t|K\\s?k\\s?t)\\b\\.?)",
+      "ExcludeReceiver": true,
+      "Fallback": {
+        "Mode": "Region",
+        "Region": {
+          "X": 0,
+          "Y": 0,
+          "W": 1,
+          "H": 0.5
+        },
+        "Regex": "^(?:[^\\n:]{0,25}?(?:n[ée]v|neve|c[ée]gn[ée]v)\\s*:\\s*)?(?:digitally signed by\\s+)?(?:\\S+\\.(?:hu|com|eu|net)\\s+)?[^\\p{L}\\p{Nd}\\n\\\"„]{0,3}(?<value>(?-i:(?!(?:Az?|Ez|Egy) )[A-ZÁÉÍÓÖŐÚÜŰ0-9\\\"„])[^\\n:,]{1,60}?\\b(?:K\\s?[fti1l]\\s?[ti1l]|[ZI2]\\s?[rt]\\s?t|N\\s?y\\s?r\\s?t|B\\s?t|K\\s?k\\s?t)\\b\\.?)",
+        "ExcludeReceiver": true
+      }
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Számla száma",
+      "LabelDirection": "Below",
+      "Regex": "(?<![0-9])(?<value>\\d{2}\\s*/\\s*(?:[0-9OoIl]\\s?){5}[0-9OoIl])(?![0-9])",
+      "RemoveSpaces": true,
+      "FixOcrDigits": true,
+      "Fallback": {
+        "Mode": "Label",
+        "LabelText": "Számla száma",
+        "LabelDirection": "Below",
+        "Regex": "(?<![0-9A-Za-z])(?<value>[A-Z]{2,}[A-Z0-9]*\\d{2}\\s*/\\s*\\d{3,})(?![0-9])",
+        "RemoveSpaces": true
+      }
+    }
+  },
+  {
+    "Id": "infocentrum",
+    "Name": "InfoCentrum Számlázó",
+    "Enabled": true,
+    "IsFallback": false,
+    "Notes": "InfoCentrum Számlázóval készült számlák. Számlaszám a 'Sorszám:' mellett, teljes évszámmal (pl. AB000123/2026).",
+    "IdentifierRules": [
+      {
+        "Text": "Infocentrum Számlázó | infocentrum.hu"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Label",
+      "LabelText": "Eladó | Szállító | Számlakibocsátó | Számla kibocsátója | Kibocsátó | Szolgáltató | Seller | Supplier",
+      "LabelDirection": "Auto",
+      "Regex": "^(?:[^\\n:]{0,25}?(?:n[ée]v|neve|c[ée]gn[ée]v)\\s*:\\s*)?(?:digitally signed by\\s+)?(?:\\S+\\.(?:hu|com|eu|net)\\s+)?[^\\p{L}\\p{Nd}\\n\\\"„]{0,3}(?<value>(?-i:(?!(?:Az?|Ez|Egy) )[A-ZÁÉÍÓÖŐÚÜŰ0-9\\\"„])[^\\n:,]{1,60}?\\b(?:K\\s?[fti1l]\\s?[ti1l]|[ZI2]\\s?[rt]\\s?t|N\\s?y\\s?r\\s?t|B\\s?t|K\\s?k\\s?t)\\b\\.?)",
+      "ExcludeReceiver": true,
+      "Fallback": {
+        "Mode": "Region",
+        "Region": {
+          "X": 0,
+          "Y": 0,
+          "W": 1,
+          "H": 0.5
+        },
+        "Regex": "^(?:[^\\n:]{0,25}?(?:n[ée]v|neve|c[ée]gn[ée]v)\\s*:\\s*)?(?:digitally signed by\\s+)?(?:\\S+\\.(?:hu|com|eu|net)\\s+)?[^\\p{L}\\p{Nd}\\n\\\"„]{0,3}(?<value>(?-i:(?!(?:Az?|Ez|Egy) )[A-ZÁÉÍÓÖŐÚÜŰ0-9\\\"„])[^\\n:,]{1,60}?\\b(?:K\\s?[fti1l]\\s?[ti1l]|[ZI2]\\s?[rt]\\s?t|N\\s?y\\s?r\\s?t|B\\s?t|K\\s?k\\s?t)\\b\\.?)",
+        "ExcludeReceiver": true
+      }
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Sorszám",
+      "LabelDirection": "Right",
+      "Regex": "(?<value>[A-Z0-9-]*\\d{3,}\\s*/\\s*(?:19|20)\\d{2})(?![0-9])",
+      "RemoveSpaces": true
+    }
+  },
+  {
+    "Id": "vidanet",
+    "Name": "ViDaNet (saját rendszer)",
+    "Enabled": true,
+    "IsFallback": false,
+    "Notes": "ViDaNet kábeltévé / internet számlák (EcoSoftWare). A 'Számlaszám:' melletti szám szóközöket és kötőjeleket tartalmaz; szóközök nélkül menti.",
+    "IdentifierRules": [
+      {
+        "Text": "ViDaNet"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Fixed",
+      "FixedValue": "ViDaNet Kábeltelevíziós Szolgáltató Zrt."
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Számlaszám",
+      "LabelDirection": "Right",
+      "Regex": "(?<value>\\d[\\d \\-]{14,30}\\d)",
+      "RemoveSpaces": true
+    }
+  },
+  {
+    "Id": "nav-online-szamlazo",
+    "Name": "NAV Online Számlázó",
+    "Enabled": true,
+    "IsFallback": false,
+    "Notes": "Az ingyenes NAV Online Számlázó programmal készült számlák (gyakran egyéni vállalkozók: a kibocsátó személynév, Kft./Bt. nélkül). Kibocsátó az 'Eladó:' mellett, számlaszám a 'Sorszám:' mellett.",
+    "IdentifierRules": [
+      {
+        "Text": "szamlazo.nav.gov.hu"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Label",
+      "LabelText": "Eladó",
+      "LabelDirection": "Right",
+      "Regex": "^(?<value>.+?)(?=\\s+Vev[őoöô]\\s*:|$)",
+      "ExcludeReceiver": true
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Sorszám",
+      "LabelDirection": "Right",
+      "Regex": "(?<![0-9A-Za-z/._-])(?!\\d{8}-\\d{8})(?!\\d{8}-\\d-\\d{2})(?!\\d{4}[./-](?:0[1-9]|1[0-2])[./-](?:0[1-9]|[12]\\d|3[01])(?![0-9/]))(?!(?:0[1-9]|[12]\\d|3[01])[./-](?:0[1-9]|1[0-2])[./-]\\d{4}(?![0-9/]))(?!(?:19|20)\\d{2}\\.?(?![0-9A-Za-z/_-]))(?!\\d{1,4}/(?:19|20)\\d{2}\\.?\\s*\\()(?![A-Z0-9/._-]*@)(?<value>(?=(?:[^\\s\\d]*\\d){3})[A-Z0-9][A-Z0-9/._-]{3,})"
+    }
+  },
+  {
+    "Id": "hugir",
+    "Name": "HUGIR",
+    "Enabled": true,
+    "IsFallback": false,
+    "Notes": "HUGIR programmal készült számlák. Kibocsátó a 'Számlakibocsátó' alatt; a számlaszám (pl. ABCD1234/2026) a 'Sorszám' alatt és a láblécben is szerepel.",
+    "IdentifierRules": [
+      {
+        "Text": "HUGIR programmal | HUGIR program"
+      },
+      {
+        "Text": "Számlakibocsátó"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Label",
+      "LabelText": "Számlakibocsátó",
+      "LabelDirection": "Below",
+      "Regex": "^(?:[^\\n:]{0,25}?(?:n[ée]v|neve|c[ée]gn[ée]v)\\s*:\\s*)?(?:digitally signed by\\s+)?(?:\\S+\\.(?:hu|com|eu|net)\\s+)?[^\\p{L}\\p{Nd}\\n\\\"„]{0,3}(?<value>(?-i:(?!(?:Az?|Ez|Egy) )[A-ZÁÉÍÓÖŐÚÜŰ0-9\\\"„])[^\\n:,]{1,60}?\\b(?:K\\s?[fti1l]\\s?[ti1l]|[ZI2]\\s?[rt]\\s?t|N\\s?y\\s?r\\s?t|B\\s?t|K\\s?k\\s?t)\\b\\.?)",
+      "ExcludeReceiver": true
+    },
+    "InvoiceNumber": {
+      "Mode": "PageRegex",
+      "Regex": "(?<![A-Z0-9])(?<value>[A-Z]{1,6}\\d{3,}/(?:19|20)\\d{2})(?![0-9])"
+    }
+  },
+  {
+    "Id": "generic",
+    "Name": "Általános (nincs sablon)",
+    "Enabled": true,
+    "IsFallback": true,
+    "Notes": "Azokhoz a számlákhoz, amelyeket egyik sablon sem ismer fel. A kibocsátót az eladói címke (Eladó, Szállító, Számlakibocsátó, Szolgáltató …) után keresi, ha nincs, az oldal felső felének első cégnevét – soha nem a vevő céget. A számlaszámot a szokásos címkék (Számlaszám, Számla sorszáma, Sorszám …) mellett vagy alatt keresi. Ezeket a számlákat érdemes ellenőrizni (világoskék sorok); a gyakori elrendezésekhez készíts saját sablont.",
+    "IdentifierRules": [],
+    "Issuer": {
+      "Mode": "Label",
+      "LabelText": "Eladó | Szállító | Számlakibocsátó | Számla kibocsátója | Kibocsátó | Szolgáltató | Seller | Supplier",
+      "LabelDirection": "Auto",
+      "Regex": "^(?:[^\\n:]{0,25}?(?:n[ée]v|neve|c[ée]gn[ée]v)\\s*:\\s*)?(?:digitally signed by\\s+)?(?:\\S+\\.(?:hu|com|eu|net)\\s+)?[^\\p{L}\\p{Nd}\\n\\\"„]{0,3}(?<value>(?-i:(?!(?:Az?|Ez|Egy) )[A-ZÁÉÍÓÖŐÚÜŰ0-9\\\"„])[^\\n:,]{1,60}?\\b(?:K\\s?[fti1l]\\s?[ti1l]|[ZI2]\\s?[rt]\\s?t|N\\s?y\\s?r\\s?t|B\\s?t|K\\s?k\\s?t)\\b\\.?)",
+      "ExcludeReceiver": true,
+      "Fallback": {
+        "Mode": "Region",
+        "Region": {
+          "X": 0,
+          "Y": 0,
+          "W": 1,
+          "H": 0.5
+        },
+        "Regex": "^(?:[^\\n:]{0,25}?(?:n[ée]v|neve|c[ée]gn[ée]v)\\s*:\\s*)?(?:digitally signed by\\s+)?(?:\\S+\\.(?:hu|com|eu|net)\\s+)?[^\\p{L}\\p{Nd}\\n\\\"„]{0,3}(?<value>(?-i:(?!(?:Az?|Ez|Egy) )[A-ZÁÉÍÓÖŐÚÜŰ0-9\\\"„])[^\\n:,]{1,60}?\\b(?:K\\s?[fti1l]\\s?[ti1l]|[ZI2]\\s?[rt]\\s?t|N\\s?y\\s?r\\s?t|B\\s?t|K\\s?k\\s?t)\\b\\.?)",
+        "ExcludeReceiver": true
+      }
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Számlaszám | Számla sorszáma | Számla száma | Számlasorszám | Számla szám | Sorszám | Bizonylatszám | Invoice No | Invoice number | Számla / Invoice",
+      "LabelDirection": "Auto",
+      "Regex": "(?<![0-9A-Za-z/._-])(?!\\d{8}-\\d{8})(?!\\d{8}-\\d-\\d{2})(?!\\d{4}[./-](?:0[1-9]|1[0-2])[./-](?:0[1-9]|[12]\\d|3[01])(?![0-9/]))(?!(?:0[1-9]|[12]\\d|3[01])[./-](?:0[1-9]|1[0-2])[./-]\\d{4}(?![0-9/]))(?!(?:19|20)\\d{2}\\.?(?![0-9A-Za-z/_-]))(?!\\d{1,4}/(?:19|20)\\d{2}\\.?\\s*\\()(?![A-Z0-9/._-]*@)(?<value>(?=(?:[^\\s\\d]*\\d){3})[A-Z0-9][A-Z0-9/._-]{3,})"
+    }
+  }
+]

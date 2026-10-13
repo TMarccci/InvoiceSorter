@@ -1,0 +1,158 @@
+{
+  "szamlazzhu-standard": {
+    "OldName": "Számlázz.hu – standard",
+    "OldNotes": "sha256:3e0999e6c3ed63fc4bebd5dfb14346187ee8d7257291864236ed7b15f277da49",
+    "Name": "Számlázz.hu – általános",
+    "Notes": "Sok kisvállalkozás és egyéni vállalkozó számlázóprogramja. Kibocsátó = az eladói blokk első sora (fent középen); a vessző utáni rész (pl. egyéni vállalkozó nyilvántartási száma) levágva."
+  },
+  "szamlazzhu-classic": {
+    "OldName": "Számlázz.hu – classic",
+    "OldNotes": "sha256:12421368ba8e418b3b9c9241837e0eabb304a809fd17a9086e0709f8785b65c6",
+    "Name": "Számlázz.hu – régi",
+    "Notes": "Régebbi Számlázz.hu sablon: 'Számlakibocsátó:' blokk bal oldalt, 'Számlaszám:' jobbra fent."
+  },
+  "billingo": {
+    "OldName": "Billingo",
+    "OldNotes": "sha256:26187980ac5c6e6ebe431ba5a7662a9c04feedfb50c33274ddf81686c4aeadc1",
+    "Name": "Billingo",
+    "Notes": "Billingo online számlázó. A számlaszám a 'Számla' cím alatt, a kibocsátó az 'ELADÓ' alatt."
+  },
+  "naturasoft": {
+    "OldName": "NaturaSoft",
+    "OldNotes": "sha256:1b537d25838de66a3a0d9c1689f8826ec875f2e1a52d378d22f3337b0ac7a343",
+    "Name": "NaturaSoft",
+    "Notes": "NaturaSoft Készlet és Számla. Kibocsátó a 'Számla kiállító adatai' alatt, számlaszám a 'Számlaszám' alatt."
+  },
+  "okos-ugyvitel": {
+    "OldName": "Okos-Ügyvitel (NetSoft)",
+    "OldNotes": "",
+    "Name": "Okos-Ügyvitel (NetSoft)",
+    "Notes": "NetSoft Okos-Ügyvitel. Kibocsátó a 'Szállító' alatt."
+  },
+  "fr-soft": {
+    "OldName": "FR-SOFT (car service)",
+    "OldNotes": "sha256:db51f949f07e8e77393e4c06c50ac8bf5aaa5807f2fd6528dfc27290e8422323",
+    "Name": "FR-SOFT (autószerviz)",
+    "Notes": "FR-SOFT autószerviz-program. A számlaszám betűelőtag + számjegyek; a számjegyek közé olvasott betűket javítja."
+  },
+  "vectory": {
+    "OldName": "Vectory (Vector Kft.)",
+    "OldNotes": "sha256:764d07c037ddf7a956beaf8496cdd1da505e05231ea155e6958e7aeecc735c15",
+    "Name": "Vectory (Vector Kft.)",
+    "Notes": "Vectory integrált vállalatirányítási rendszer (Vector Kft.), sok cég használja. Számlák és jóváírók; a 'Folytatólap' oldalak automatikusan a számlához kerülnek. Kibocsátó = az eladói doboz első cégneve."
+  },
+  "juta-soft": {
+    "OldName": "JUTA-soft (JUTA-Raktár)",
+    "OldNotes": "sha256:fd92a2cde06bf50bd3e7184c7e6be77581b63677a22f5402176f692f03081967",
+    "Name": "JUTA-soft (JUTA-Raktár)",
+    "Notes": "Kisbolti program blokkméretű számlákkal. Kibocsátó = az első cégformát (Kft., Bt. …) tartalmazó sor felül."
+  },
+  "nav-penztargep": {
+    "OldName": "Cash register receipt (NAV)",
+    "OldNotes": "sha256:9d667ca0c5f0eb1cadcc8391dec712b71f2d2cc091bbd1a061adc25ac46692b6",
+    "Name": "Pénztárgépes nyugta (NAV)",
+    "Notes": "Online pénztárgéppel nyomtatott egyszerűsített számlák (áruházláncok, benzinkutak, posta …). Felismerés: NAV ellenőrző kód, az AP-számos számlaszám-minta, vagy – csak keskeny, blokk alakú oldalon – a pénztárgép AP-kódja. Kibocsátó = az első cégnév felül. Számlaszám: AP-szám/zárás/sorszám (pl. A12345678/0123/00001); más formátumú számot a tartalék szabály olvas a 'Számlaszám' címke mellől (csak számjegyek és perjelek)."
+  },
+  "fugea": {
+    "OldName": "Pre-printed invoice pad (FUGEA)",
+    "OldNotes": "sha256:c264e7f241c1d355f0eaca4a982232e92d77ac722579b753adca5e44df3889bc",
+    "Name": "Előnyomott számlatömb (FUGEA)",
+    "Notes": "Kézzel kitöltött 'Készpénzfizetési számla' tömbök. A nyomtatott sorszámot olvassa; a kézzel írt kibocsátót az OCR nem tudja – az ellenőrzésnél kell beírni."
+  },
+  "mvm-libra": {
+    "OldName": "MVM LIBRA",
+    "OldNotes": "sha256:7798597d875cbe65fa27fb5421fc35ed7399920b34fd2dea0939d1b5d3631743",
+    "Name": "MVM LIBRA",
+    "Notes": "Az MVM-csoport LIBRA számlázó rendszere (áram / gáz). A részletező oldalakat ('Telephelyi részletező') a számlaszám alapján összevonja."
+  },
+  "webshop-ertekesites": {
+    "OldName": "Webshop (Sorszám / Eladó at bottom)",
+    "OldNotes": "sha256:d0af2cf6d57b1c2c1c4d0bb2c3d3766b8a223179594c429a0288ff529d901f25",
+    "Name": "Webshop (Sorszám / Eladó alul)",
+    "Notes": "Webshop-számla: számlaszám jobbra fent a 'Sorszám' után, az eladói blokk az 'Eladó' alatt az oldal alsó felében."
+  },
+  "metro": {
+    "OldName": "METRO (own system)",
+    "OldNotes": "sha256:1640e46b85fac8dbc6eb20a609b90b3cc147e4567c9bd009c564e9a762b7accb",
+    "Name": "METRO (saját rendszer)",
+    "Notes": "METRO Kereskedelmi Kft. áruházi számlák. A számla utáni oldal általában reklám (folytatólapként marad). Számlaszám = a teljes nyomtatott szám a pénztári hivatkozás nélkül, pl. 2026-0/0(11) 0012/003456."
+  },
+  "telekom": {
+    "OldName": "Magyar Telekom (own system)",
+    "OldNotes": "sha256:3f64d51084a900b6b45cb7c926ce0276bf00814aed9eaafbbf27c1abd428d3a6",
+    "Name": "Magyar Telekom (saját rendszer)",
+    "Notes": "Vezetékes és mobil számlák. A cégnév minden oldalon szerepel; a szabály csak a fejlécet nézi, így a következő oldalak a számlához kerülnek."
+  },
+  "fleetcor": {
+    "OldName": "FleetCor (own system)",
+    "OldNotes": "sha256:b183c8aaa9b38ffc5a5392a15b7b664bf025b47fcd86eb3cac2de10542490940",
+    "Name": "FleetCor (saját rendszer)",
+    "Notes": "Fekvő oldalak, automatikus forgatással. Az azonos számla oldalait számlaszám szerint vonja össze. A 'Számlakivonat' oldalaknak nincs számlaszáma, ezek a hibák közé kerülnek."
+  },
+  "rlb60": {
+    "OldName": "RLB-60 Számlázó",
+    "OldNotes": "sha256:603b192b459a2e44763c247898dbd3e5c1ff726514e197db1e3bc1ae319b492a",
+    "Name": "RLB-60 Számlázó",
+    "Notes": "RLB-60 Bt. számlázó- és készletnyilvántartó programja. Kibocsátó az 'Eladó:' mellett, számlaszám a 'Számla sorszám' alatt: 2026/01234 (az OCR a perjelet gyakran 1-esnek olvassa) vagy a cég saját formátuma (pl. ABC-0123/2026) a tartalék szabállyal. Az eredeti és a '2. példány' azonos számú, ezeket összevonja."
+  },
+  "sap-business-one": {
+    "OldName": "SAP Business One (IFSZ)",
+    "OldNotes": "sha256:de5f1b6a4aaa01d3948e4a249a2d02de5a54715f89a8bef090ea206771a3a8af",
+    "Name": "SAP Business One (IFSZ)",
+    "Notes": "SAP Business One (IFSZ honosítás) által nyomtatott számlák. A további oldalak ('Oldal: 2/3') megismétlik a fejlécet, folytatólapként maradnak. Kibocsátó a 'Szállító' alatt, számlaszám a 'Sorszáma' mellett."
+  },
+  "molgroup-cards": {
+    "OldName": "MOLGROUP Cards (fuel card invoice)",
+    "OldNotes": "sha256:176ffcd16da2423459dd84945a606067d599c1b5adb4dc415bd67da884c73dfc",
+    "Name": "MOLGROUP Cards (üzemanyagkártya-számla)",
+    "Notes": "MOL Downstream üzemanyagkártya-számlák (MOLGROUP CARDS). Számlaszám = a 10 jegyű szám a 'Számla/Invoice' alatt. A 'Számla melléklet' (kártyakivonat) oldalak nem számlák, ez a sablon nem ismeri fel őket."
+  },
+  "dynamics-bc": {
+    "OldName": "Microsoft Dynamics 365 Business Central",
+    "OldNotes": "sha256:d80a621651826c20a75c48ea8491ce4665e74fc6f8e331b76e78fe006821c066",
+    "Name": "Microsoft Dynamics 365 Business Central",
+    "Notes": "Microsoft Dynamics 365 Business Central-lal készült számlák. Számlaszám a 'Szám / No.:' mellett (pl. KSZLA_XX/26-01234); az eredetit és a másolatot számuk alapján összevonja."
+  },
+  "znet-telekom": {
+    "OldName": "ZNET Telekom (own system)",
+    "OldNotes": "sha256:95b827f75670ad5e0cf504bc2d913cf9473a7e0430490a24c4ac64380289c061",
+    "Name": "ZNET Telekom (saját rendszer)",
+    "Notes": "ZNET Telekom e-számlák. A fejlécben lévő számot az OCR gyakran szétszedi ('2026/20 123'), ezért először a fizetési megjegyzést olvassa: 'tüntesse fel a számla sorszámát: 2026/201234'."
+  },
+  "diamond-studio": {
+    "OldName": "Diamond Stúdió",
+    "OldNotes": "sha256:956547fb258aea554e27c9a03cf9db548efa77ba0db886493f19e974ee1f0390",
+    "Name": "Diamond Stúdió",
+    "Notes": "Diamond Stúdió programmal készült számlák. Számlaszám a 'Számla száma' alatt: 26/001234 formátumban mindig 6 számjegy a perjel után – a rövidebb OCR-olvasat ('26/00 234') hiba, újraolvassa; betűelőtagos formátumok (pl. ABC26/0110) a tartalék szabállyal."
+  },
+  "infocentrum": {
+    "OldName": "InfoCentrum Számlázó",
+    "OldNotes": "sha256:fed0befc87c21d227e4e8bc17b47eb8e49db113f58b83646223522df3c24d19e",
+    "Name": "InfoCentrum Számlázó",
+    "Notes": "InfoCentrum Számlázóval készült számlák. Számlaszám a 'Sorszám:' mellett, teljes évszámmal (pl. AB000123/2026)."
+  },
+  "vidanet": {
+    "OldName": "ViDaNet (own system)",
+    "OldNotes": "sha256:b730dd00380e9d6b5f611b3e10b71c8ced357180b5b3432af29ccd8a996dc648",
+    "Name": "ViDaNet (saját rendszer)",
+    "Notes": "ViDaNet kábeltévé / internet számlák (EcoSoftWare). A 'Számlaszám:' melletti szám szóközöket és kötőjeleket tartalmaz; szóközök nélkül menti."
+  },
+  "nav-online-szamlazo": {
+    "OldName": "NAV Online Számlázó",
+    "OldNotes": "sha256:54b278773ec99eef8a054845033db7822bed765926080f8e240b8d10d4f1809d",
+    "Name": "NAV Online Számlázó",
+    "Notes": "Az ingyenes NAV Online Számlázó programmal készült számlák (gyakran egyéni vállalkozók: a kibocsátó személynév, Kft./Bt. nélkül). Kibocsátó az 'Eladó:' mellett, számlaszám a 'Sorszám:' mellett."
+  },
+  "hugir": {
+    "OldName": "HUGIR",
+    "OldNotes": "sha256:4364fab9ee451932a63711c5fa372375c28a47f27291f896decb30c0504e3b0b",
+    "Name": "HUGIR",
+    "Notes": "HUGIR programmal készült számlák. Kibocsátó a 'Számlakibocsátó' alatt; a számlaszám (pl. ABCD1234/2026) a 'Sorszám' alatt és a láblécben is szerepel."
+  },
+  "generic": {
+    "OldName": "Generic (no layout style)",
+    "OldNotes": "sha256:2c986e3a484d087f07137235d34ad226a0d09fe9c1842b6dec1eaf5640a4effe",
+    "Name": "Általános (nincs sablon)",
+    "Notes": "Azokhoz a számlákhoz, amelyeket egyik sablon sem ismer fel. A kibocsátót az eladói címke (Eladó, Szállító, Számlakibocsátó, Szolgáltató …) után keresi, ha nincs, az oldal felső felének első cégnevét – soha nem a vevő céget. A számlaszámot a szokásos címkék (Számlaszám, Számla sorszáma, Sorszám …) mellett vagy alatt keresi. Ezeket a számlákat érdemes ellenőrizni (világoskék sorok); a gyakori elrendezésekhez készíts saját sablont."
+  }
+}

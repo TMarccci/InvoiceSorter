@@ -1,0 +1,79 @@
+# Build + test on every push and pull request; builds both installers (client and server) and keeps them as
+# downloadable artifacts (version: next patch after the latest release tag, marked as a CI build, e.g. 1.4.3-ci.57).
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # tags are needed for the version
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Version from the latest tag
+        id: version
+        shell: bash
+        run: |
+          latest=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' '[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//' | sort -t. -k1,1n -k2,2n -k3,3n | tail -n1)
+          latest=${latest:-0.0.0}
+          IFS=. read -r major minor patch <<< "$latest"
+          echo "version=$major.$minor.$((patch + 1))-ci.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          # Inno Setup / file versions need plain numbers
+          echo "fileversion=$major.$minor.$((patch + 1))" >> "$GITHUB_OUTPUT"
+
+      - name: Check the Surya worker script
+        shell: bash
+        run: python -m py_compile src/InvoiceSorter.Core/surya_worker.py
+
+      - name: Restore
+        run: dotnet restore InvoiceSorter.slnx
+
+      - name: Build
+        run: dotnet build InvoiceSorter.slnx -c Release --no-restore -p:Version=${{ steps.version.outputs.version }}
+
+      - name: Test
+        run: dotnet test tests/InvoiceSorter.Tests -c Release --no-build --logger "trx;LogFileName=test-results.trx" --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults/*.trx
+          if-no-files-found: ignore
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Build installers
+        shell: pwsh
+        run: |
+          ./scripts/build-client.ps1 -Version ${{ steps.version.outputs.fileversion }}
+          ./scripts/build-server.ps1 -Version ${{ steps.version.outputs.fileversion }}
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: InvoiceSorter-${{ steps.version.outputs.version }}
+          path: |
+            installer/client/Output/*.exe
+            installer/server/Output/*.exe
+          retention-days: 14

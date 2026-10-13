@@ -1,0 +1,12 @@
+bin/
+obj/
+publish/
+.vs/
+*.user
+TestResults/
+example/
+# Installer output
+installer/*/Output/
+# Leftovers of the old Python Surya server (replaced by src/InvoiceSorter.Server)
+surya-server/
+__pycache__/

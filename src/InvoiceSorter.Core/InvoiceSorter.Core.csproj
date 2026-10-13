@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>InvoiceSorter.Core</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="PDFsharp" Version="6.2.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="DefaultStyles.json" />
+    <EmbeddedResource Include="BuiltInStyleTexts.json" />
+    <EmbeddedResource Include="surya_worker.py" />
+    <EmbeddedResource Include="setup_surya.ps1" />
+    <InternalsVisibleTo Include="InvoiceSorter.Tests" />
+  </ItemGroup>
+
+</Project>

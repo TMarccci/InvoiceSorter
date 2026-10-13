@@ -1,0 +1,184 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:InvoiceSorter.App">
+    <!-- Shared look of the Invoice Sorter apps (client and server manager): brand indigo #6366F1. -->
+    <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    <local:StepBrushConverter x:Key="StepBrush" />
+    <local:StepVisibilityConverter x:Key="StepVis" />
+    <local:ErrorBrushConverter x:Key="ErrorBrush" />
+    <local:StatusBrushConverter x:Key="StatusBrush" />
+    <local:TrustBrushConverter x:Key="TrustBrush" />
+    <local:ErrorBackgroundConverter x:Key="ErrorBackground" />
+    <local:LogLevelBrushConverter x:Key="LogLevelBrush" />
+    <local:NullToVisibilityConverter x:Key="NullToVis" />
+    <local:NullToVisibilityConverter x:Key="NullToVisInverted" Invert="True" />
+    <local:InverseBoolConverter x:Key="InverseBool" />
+    <local:ZeroToVisibilityConverter x:Key="ZeroToVis" />
+    <local:ZeroToVisibilityConverter x:Key="ZeroToVisInverted" Invert="True" />
+    <local:ThumbnailConverter x:Key="Thumbnail" />
+    <local:EnumVisibilityConverter x:Key="EnumVis" />
+    <local:RegionTextConverter x:Key="RegionText" />
+    <local:EnumTextConverter x:Key="EnumText" />
+
+    <SolidColorBrush x:Key="AccentBrush" Color="#6366F1" />
+    <SolidColorBrush x:Key="AccentDarkBrush" Color="#4F46E5" />
+    <SolidColorBrush x:Key="AccentSoftBrush" Color="#EEF2FF" />
+    <SolidColorBrush x:Key="HeaderBrush" Color="#1E293B" />
+    <SolidColorBrush x:Key="PageBackground" Color="#F3F4F6" />
+    <SolidColorBrush x:Key="CardBorder" Color="#E5E7EB" />
+    <SolidColorBrush x:Key="MutedText" Color="#6B7280" />
+
+    <Style x:Key="Card" TargetType="Border">
+        <Setter Property="Background" Value="White" />
+        <Setter Property="BorderBrush" Value="{StaticResource CardBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="20" />
+    </Style>
+
+    <Style x:Key="SectionTitle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="0,0,0,8" />
+    </Style>
+
+    <Style x:Key="Muted" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource MutedText}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="FieldLabel" TargetType="TextBlock">
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{StaticResource MutedText}" />
+        <Setter Property="Margin" Value="0,0,12,0" />
+    </Style>
+
+    <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Padding" Value="18,8" />
+    </Style>
+
+    <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="Padding" Value="12,6" />
+    </Style>
+
+    <local:VatCheckConverter x:Key="VatCheck" />
+    <local:VatCheckBrushConverter x:Key="VatCheckBrush" />
+
+    <!-- Icon font of Windows 11 (falls back to the Windows 10 one). -->
+    <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+
+    <!--
+        Action buttons of the review screen: a rounded tile with an icon (Tag) above a short label.
+        Used for Button and ToggleButton; "DangerAction" turns red when checked (exclude from export).
+    -->
+    <Style x:Key="ActionButton" TargetType="ButtonBase">
+        <Setter Property="Background" Value="#F8FAFC" />
+        <Setter Property="BorderBrush" Value="#E2E8F0" />
+        <Setter Property="Foreground" Value="#1E293B" />
+        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="MinWidth" Value="78" />
+        <Setter Property="Height" Value="66" />
+        <Setter Property="Margin" Value="0,0,6,6" />
+        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ButtonBase">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="1" CornerRadius="10" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                        <Border.RenderTransform>
+                            <TranslateTransform x:Name="Lift" Y="0" />
+                        </Border.RenderTransform>
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <TextBlock x:Name="Icon" Text="{TemplateBinding Tag}" FontFamily="{StaticResource IconFont}" FontSize="18"
+                                       HorizontalAlignment="Center" Foreground="{StaticResource AccentBrush}" Margin="0,0,0,4" />
+                            <ContentPresenter HorizontalAlignment="Center" TextBlock.TextAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#EEF2FF" />
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="#93C5FD" />
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Lift" Storyboard.TargetProperty="Y" To="-2" Duration="0:0:0.12" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Lift" Storyboard.TargetProperty="Y" To="0" Duration="0:0:0.12" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#E0E7FF" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Bd" Property="Opacity" Value="0.4" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="ToggleAction" TargetType="ToggleButton" BasedOn="{StaticResource ActionButton}">
+        <Style.Triggers>
+            <Trigger Property="IsChecked" Value="True">
+                <Setter Property="Background" Value="#E0E7FF" />
+                <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="DangerAction" TargetType="ToggleButton" BasedOn="{StaticResource ActionButton}">
+        <Style.Triggers>
+            <Trigger Property="IsChecked" Value="True">
+                <Setter Property="Background" Value="#FEE2E2" />
+                <Setter Property="BorderBrush" Value="#F87171" />
+                <Setter Property="Foreground" Value="#991B1B" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- A value found by OCR that can be taken over with one click. -->
+    <Style x:Key="SuggestionChip" TargetType="Button">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Margin" Value="0,0,5,4" />
+        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="#F1F5F9" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="11" Padding="8,2">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE8FB;" FontFamily="{StaticResource IconFont}" FontSize="10" Foreground="{StaticResource AccentBrush}"
+                                       VerticalAlignment="Center" Margin="0,0,5,0" />
+                            <ContentPresenter VerticalAlignment="Center" TextBlock.FontFamily="Consolas" />
+                        </StackPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#E0E7FF" />
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="#60A5FA" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="ActionGroupTitle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="10.5" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="#94A3B8" />
+        <Setter Property="Margin" Value="2,0,0,4" />
+    </Style>
+</ResourceDictionary>

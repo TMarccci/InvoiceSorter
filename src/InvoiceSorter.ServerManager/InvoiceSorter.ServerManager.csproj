@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>InvoiceSorterServerManager</AssemblyName>
+    <RootNamespace>InvoiceSorter.ServerManager</RootNamespace>
+    <Product>Invoice Sorter Server Manager</Product>
+    <Company>TMarccci</Company>
+    <Authors>TMarccci</Authors>
+    <Copyright>© TMarccci</Copyright>
+    <Description>Az Invoice Sorter szerver kezelése: szolgáltatás, központi sablonok és beállítások, Surya-sor</Description>
+    <Version>1.1.0</Version>
+    <ApplicationIcon>..\..\assets\invoicesorter-server.ico</ApplicationIcon>
+    <!-- Starting / stopping the service and reading the keys in the data folder need administrator rights. -->
+    <ApplicationManifest Condition="'$(NoElevation)' != 'true'">app.manifest</ApplicationManifest>
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The client's theme, style editor and settings window are reused for the central configuration. -->
+    <ProjectReference Include="..\InvoiceSorter.App\InvoiceSorter.App.csproj" />
+    <ProjectReference Include="..\InvoiceSorter.Core\InvoiceSorter.Core.csproj" />
+  </ItemGroup>
+
+</Project>

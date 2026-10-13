@@ -1,0 +1,276 @@
+<Window x:Class="InvoiceSorter.App.Views.StyleEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:InvoiceSorter.App.Controls"
+        Title="Sablonok" Height="900" Width="1500" MinWidth="1100" MinHeight="600"
+        WindowStartupLocation="CenterOwner" Background="{StaticResource PageBackground}">
+    <Window.Resources>
+        <!-- Editor for one field (issuer / invoice number). DataContext = FieldDefinition. -->
+        <DataTemplate x:Key="FieldEditor">
+            <Grid Margin="0,4,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="110" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="Olvasás módja" Style="{StaticResource FieldLabel}" />
+                <ComboBox Grid.Column="1" Margin="0,0,0,6" SelectedItem="{Binding Mode}"
+                          ItemsSource="{Binding DataContext.FieldModes, RelativeSource={RelativeSource AncestorType=Window}}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate><TextBlock Text="{Binding Converter={StaticResource EnumText}}" /></DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <TextBlock Grid.Row="1" Text="Állandó szöveg" Style="{StaticResource FieldLabel}" Visibility="{Binding Mode, Converter={StaticResource EnumVis}, ConverterParameter=Fixed}" />
+                <TextBox Grid.Row="1" Grid.Column="1" Margin="0,0,0,6" Text="{Binding FixedValue, UpdateSourceTrigger=PropertyChanged}"
+                         Visibility="{Binding Mode, Converter={StaticResource EnumVis}, ConverterParameter=Fixed}" />
+
+                <TextBlock Grid.Row="2" Text="Címke szövege" Style="{StaticResource FieldLabel}" Visibility="{Binding Mode, Converter={StaticResource EnumVis}, ConverterParameter=Label}" />
+                <DockPanel Grid.Row="2" Grid.Column="1" Margin="0,0,0,6" Visibility="{Binding Mode, Converter={StaticResource EnumVis}, ConverterParameter=Label}">
+                    <ComboBox DockPanel.Dock="Right" Width="90" Margin="6,0,0,0" SelectedItem="{Binding LabelDirection}"
+                              ItemsSource="{Binding DataContext.LabelDirections, RelativeSource={RelativeSource AncestorType=Window}}"
+                              ToolTip="Hol áll az érték a címkéhez képest">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate><TextBlock Text="{Binding Converter={StaticResource EnumText}}" /></DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <TextBox Text="{Binding LabelText, UpdateSourceTrigger=PropertyChanged}" ToolTip="pl. Számlaszám – az OCR-hibákat és a hiányzó ékezeteket elviseli. Alternatívák: 'Számla sorszám | Számla száma'" />
+                </DockPanel>
+
+                <TextBlock Grid.Row="3" Text="Terület" Style="{StaticResource FieldLabel}" Visibility="{Binding Mode, Converter={StaticResource EnumVis}, ConverterParameter=Region|Label}" />
+                <DockPanel Grid.Row="3" Grid.Column="1" Margin="0,0,0,6" Visibility="{Binding Mode, Converter={StaticResource EnumVis}, ConverterParameter=Region|Label}">
+                    <Button DockPanel.Dock="Right" Content="Törlés" Click="ClearFieldRegion_Click" Padding="8,2" />
+                    <TextBlock Text="{Binding Region, Converter={StaticResource RegionText}, ConverterParameter='(nincs – a címkét az egész oldalon keresi)'}" VerticalAlignment="Center" Style="{StaticResource Muted}" />
+                </DockPanel>
+
+                <TextBlock Grid.Row="4" Text="Regex (nem kötelező)" Style="{StaticResource FieldLabel}" Visibility="{Binding Mode, Converter={StaticResource EnumVis}, ConverterParameter=Region|Label|PageRegex}" />
+                <TextBox Grid.Row="4" Grid.Column="1" Margin="0,0,0,6" FontFamily="Consolas" Text="{Binding Regex, UpdateSourceTrigger=PropertyChanged}"
+                         Visibility="{Binding Mode, Converter={StaticResource EnumVis}, ConverterParameter=Region|Label|PageRegex}"
+                         ToolTip="Kiszűri az értéket a kiolvasott szövegből. Az első ( ) csoportot vagy a 'value' nevű csoportot használja. Példa: (\d{4}/\d{6}). Az 'OCR-számjegyek javítása' mellett a 'digits' nevű csoportban minden O/I/l/S/B számjeggyé alakul: (?&lt;digits&gt;[0-9OIl]{8}). Cégnév: ^(?&lt;value&gt;.+?\b(?:Kft|Zrt|Bt|Nyrt)\b\.?)" />
+
+                <TextBlock Grid.Row="5" Text="Kimeneti formátum" Style="{StaticResource FieldLabel}" Visibility="{Binding Mode, Converter={StaticResource EnumVis}, ConverterParameter=Region|Label|PageRegex}" />
+                <TextBox Grid.Row="5" Grid.Column="1" Margin="0,0,0,6" FontFamily="Consolas" Text="{Binding Format, UpdateSourceTrigger=PropertyChanged}"
+                         Visibility="{Binding Mode, Converter={StaticResource EnumVis}, ConverterParameter=Region|Label|PageRegex}"
+                         ToolTip="Nem kötelező: az érték összeállítása a regex csoportjaiból, pl. $1/$2" />
+
+                <WrapPanel Grid.Row="6" Grid.Column="1" Visibility="{Binding Mode, Converter={StaticResource EnumVis}, ConverterParameter=Region|Label|PageRegex}">
+                    <CheckBox Content="Szóközök törlése" IsChecked="{Binding RemoveSpaces}" Margin="0,0,16,0" />
+                    <CheckBox Content="OCR-számjegyek javítása (B→8, S→5, O→0…)" IsChecked="{Binding FixOcrDigits}" Margin="0,0,16,0" />
+                    <CheckBox Content="Soha nem a vevő cég" IsChecked="{Binding ExcludeReceiver}"
+                              ToolTip="Kihagyja a vevő cég nevét (hasznos, ha a kibocsátót az oldalról olvassa)" />
+                    <TextBlock Text="  · tartalék szabálya is van (a styles.json-ban szerkeszthető)" Style="{StaticResource Muted}"
+                               Visibility="{Binding Fallback, Converter={StaticResource NullToVis}}" />
+                </WrapPanel>
+            </Grid>
+        </DataTemplate>
+    </Window.Resources>
+
+    <DockPanel Margin="12">
+        <!-- Bottom buttons -->
+        <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button x:Name="CancelButton" Content="Mégse" IsCancel="True" Margin="0,0,8,0" Width="100" />
+                <Button x:Name="SaveButton" Content="Sablonok mentése" Style="{StaticResource PrimaryButton}" Click="Save_Click" />
+            </StackPanel>
+            <TextBlock x:Name="FooterText" Style="{StaticResource Muted}" VerticalAlignment="Center" TextWrapping="Wrap"
+                       Text="Egy sablon egy számlaelrendezést ír le: miről ismerhető fel az első oldala, és hol áll rajta a kibocsátó és a számlaszám." />
+        </DockPanel>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="230" />
+                <ColumnDefinition Width="10" />
+                <ColumnDefinition Width="470" />
+                <ColumnDefinition Width="10" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Style list -->
+            <Border Style="{StaticResource Card}" Padding="10">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Sablonok" Style="{StaticResource SectionTitle}" FontSize="15" />
+                    <Button DockPanel.Dock="Bottom" Content="Beépített sablonok visszaállítása…" Command="{Binding RestoreBuiltInCommand}" Margin="0,6,0,0" Padding="4"
+                            ToolTip="Hozzáadja a listából hiányzó beépített sablonokat (számlázóprogramok és nagy szolgáltatók)" />
+                    <UniformGrid DockPanel.Dock="Bottom" Rows="1" Margin="0,8,0,0">
+                        <Button Content="Új" Command="{Binding AddStyleCommand}" Margin="0,0,4,0" Padding="4" />
+                        <Button Content="Másolás" Command="{Binding DuplicateStyleCommand}" Margin="0,0,4,0" Padding="4" />
+                        <Button Content="Törlés" Command="{Binding DeleteStyleCommand}" Padding="4" />
+                    </UniformGrid>
+                    <ListBox ItemsSource="{Binding Styles}" SelectedItem="{Binding SelectedStyle}" BorderThickness="0">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <CheckBox IsChecked="{Binding Enabled}" ToolTip="Bekapcsolva" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="160" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <!-- Style editor -->
+            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="14">
+                <Grid>
+                    <TextBlock Text="Új sablont az 'Új' gombbal hozhatsz létre." Style="{StaticResource Muted}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Visibility="{Binding SelectedStyle, Converter={StaticResource NullToVisInverted}}" />
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding SelectedStyle, Converter={StaticResource NullToVis}}">
+                        <StackPanel DataContext="{Binding SelectedStyle}">
+                            <TextBlock Text="Név" FontWeight="SemiBold" />
+                            <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8" />
+                            <CheckBox Content="Általános tartalék sablon – azokhoz a számlákhoz, amelyeket más sablon nem ismer fel (sosem kezd új számlát)"
+                                      IsChecked="{Binding IsFallback}" Margin="0,0,0,8" />
+                            <TextBlock Text="Megjegyzés" FontWeight="SemiBold" />
+                            <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,14" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="40" />
+
+                            <!-- Identification -->
+                            <Border BorderBrush="MediumPurple" BorderThickness="3,0,0,0" Padding="10,0,0,0" Margin="0,0,0,16">
+                                <StackPanel>
+                                    <TextBlock Text="1. Az első oldal felismerése" FontWeight="SemiBold" FontSize="14" />
+                                    <TextBlock Style="{StaticResource Muted}" Margin="0,2,0,6"
+                                               Text="Minden szövegnek szerepelnie kell az oldalon, hogy az ezzel a sablonnal új számlát kezdjen. Egy szöveg területre is korlátozható (az oldalon rajzolva). Tipp: inkább a számlázóprogramot azonosítsd (a láblécét, pl. 'A bizonylatot a Számlázz.hu készítette'), mint a kibocsátót – így egy sablon minden cégre jó, amely azt a programot használja." />
+                                    <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,6" FontSize="11"
+                                               Text="Alternatívák: 'BIZONYLATSZÁM | NAV Ellenőrző kód' (bármelyik elég).  Reguláris kifejezés: 're:[A-Z]\d{8}/\d{4}/\d{5}'." />
+                                    <DataGrid ItemsSource="{Binding IdentifierRules}" AutoGenerateColumns="False" HeadersVisibility="Column" CanUserAddRows="False"
+                                              SelectedItem="{Binding DataContext.SelectedRule, RelativeSource={RelativeSource AncestorType=Window}}"
+                                              MinHeight="70" MaxHeight="160" GridLinesVisibility="Horizontal">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Szöveg" Binding="{Binding Text, UpdateSourceTrigger=PropertyChanged}" Width="*" />
+                                            <DataGridTextColumn Header="Hol" Binding="{Binding Region, Converter={StaticResource RegionText}}" IsReadOnly="True" Width="150" />
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                    <WrapPanel Margin="0,6,0,0">
+                                        <Button Content="+ Szöveg" Command="{Binding DataContext.AddRuleCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="0,0,6,0" Padding="8,3" />
+                                        <Button Content="Eltávolítás" Command="{Binding DataContext.RemoveRuleCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="0,0,6,0" Padding="8,3" />
+                                        <Button Content="Keresés az egész oldalon" Command="{Binding DataContext.ClearRuleRegionCommand, RelativeSource={RelativeSource AncestorType=Window}}" Padding="8,3"
+                                                ToolTip="A kijelölt szöveg területének törlése" />
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Issuer -->
+                            <Border BorderBrush="SeaGreen" BorderThickness="3,0,0,0" Padding="10,0,0,0" Margin="0,0,0,16">
+                                <StackPanel>
+                                    <TextBlock Text="2. Kibocsátó" FontWeight="SemiBold" FontSize="14" />
+                                    <TextBlock Style="{StaticResource Muted}" Text="Egy szállítóhoz tartozó sablonnál használd az 'Állandó' módot. Több kibocsátó közös elrendezésénél (pl. számlázóprogram) olvasd az oldalról." />
+                                    <ContentControl Content="{Binding Issuer}" ContentTemplate="{StaticResource FieldEditor}" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Invoice number -->
+                            <Border BorderBrush="RoyalBlue" BorderThickness="3,0,0,0" Padding="10,0,0,0" Margin="0,0,0,8">
+                                <StackPanel>
+                                    <TextBlock Text="3. Számlaszám" FontWeight="SemiBold" FontSize="14" />
+                                    <TextBlock Style="{StaticResource Muted}" Text="A 'Címke mellett' mód megkeresi a címkét (pl. Számlaszám), és a mellette álló értéket olvassa – elcsúszott szkennelésnél is megbízható." />
+                                    <ContentControl Content="{Binding InvoiceNumber}" ContentTemplate="{StaticResource FieldEditor}" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <!-- Page preview -->
+            <Border Grid.Column="4" Style="{StaticResource Card}" Padding="12">
+                <DockPanel>
+                    <!-- Page navigation -->
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                        <Button DockPanel.Dock="Right" Content="Minta PDF megnyitása…" Command="{Binding OpenPdfCommand}" />
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="◀" Command="{Binding PrevPageCommand}" Padding="10,4" />
+                            <TextBox Text="{Binding PageNumber, UpdateSourceTrigger=LostFocus}" Width="50" Margin="4,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" KeyDown="PageBox_KeyDown" />
+                            <Button Content="▶" Command="{Binding NextPageCommand}" Padding="10,4" />
+                            <TextBlock VerticalAlignment="Center" Margin="8,0,16,0">
+                                <Run Text="/" /> <Run Text="{Binding PageCount, Mode=OneWay}" />
+                            </TextBlock>
+                            <Button Content="Következő oldal ezzel a sablonnal" Command="{Binding NextMatchCommand}" Margin="0,0,12,0" />
+                            <TextBlock Text="{Binding PageSourceText}" Style="{StaticResource Muted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="260" />
+                            <TextBlock Text="  oldal olvasása…" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" Visibility="{Binding IsLoadingPage, Converter={StaticResource BoolToVis}}" />
+                        </StackPanel>
+                    </DockPanel>
+
+                    <!-- Draw target -->
+                    <Border DockPanel.Dock="Top" Background="#F8FAFC" CornerRadius="6" Padding="10,6" Margin="0,0,0,8">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Keret rajzolása az oldalon:" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,12,0" />
+                                <RadioButton Content="Azonosító szöveg" IsChecked="{Binding DrawIdentifier}" Foreground="MediumPurple" Margin="0,0,14,0" GroupName="draw" />
+                                <RadioButton Content="Kibocsátó" IsChecked="{Binding DrawIssuer}" Foreground="SeaGreen" Margin="0,0,14,0" GroupName="draw" />
+                                <RadioButton Content="Számlaszám" IsChecked="{Binding DrawNumber}" Foreground="RoyalBlue" GroupName="draw" />
+                            </StackPanel>
+                            <TextBlock Text="{Binding Hint}" Style="{StaticResource Muted}" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Live test -->
+                    <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource CardBorder}" BorderThickness="0,1,0,0" Padding="0,8,0,0" Margin="0,8,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Ez az oldal" Style="{StaticResource FieldLabel}" />
+                            <TextBlock Grid.Column="1" Text="{Binding MatchResult}" FontWeight="SemiBold" TextWrapping="Wrap">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#B91C1C" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Matches}" Value="True">
+                                                <Setter Property="Foreground" Value="#16A34A" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBlock Grid.Row="1" Text="Kibocsátó" Style="{StaticResource FieldLabel}" Foreground="SeaGreen" />
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding IssuerResult}" FontFamily="Consolas" TextWrapping="Wrap" />
+                            <TextBlock Grid.Row="2" Text="Számlaszám" Style="{StaticResource FieldLabel}" Foreground="RoyalBlue" />
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding NumberResult}" FontFamily="Consolas" TextWrapping="Wrap" />
+                            <TextBlock Grid.Row="3" Text="Vevő adószáma" Style="{StaticResource FieldLabel}" />
+                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding VatResult}" TextWrapping="Wrap" />
+                            <DockPanel Grid.Row="4" Grid.ColumnSpan="2" Margin="0,6,0,0">
+                                <Button DockPanel.Dock="Left" Content="Próba az összes oldalon" Command="{Binding TestAllCommand}" VerticalAlignment="Top" Margin="0,0,10,0" />
+                                <TextBlock Text="{Binding TestAllResult}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                            </DockPanel>
+                        </Grid>
+                    </Border>
+
+                    <Grid>
+                        <controls:PageViewer x:Name="Viewer" ImagePath="{Binding CurrentImage}" Overlays="{Binding Overlays}" CanDraw="{Binding CanDraw}" />
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Background="White">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasPages}" Value="False">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <TextBlock Text="Nincs betöltött oldal." HorizontalAlignment="Center" FontWeight="SemiBold" />
+                            <TextBlock Style="{StaticResource Muted}" Text="Előbb dolgozz fel egy PDF-et, vagy nyiss meg egy minta PDF-et a sablonok tervezéséhez." HorizontalAlignment="Center" Margin="0,4,0,8" />
+                            <Button Content="Minta PDF megnyitása…" Command="{Binding OpenPdfCommand}" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Grid>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </DockPanel>
+</Window>

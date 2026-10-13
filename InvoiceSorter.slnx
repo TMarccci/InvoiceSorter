@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/InvoiceSorter.App/InvoiceSorter.App.csproj" />
+    <Project Path="src/InvoiceSorter.Cli/InvoiceSorter.Cli.csproj" />
+    <Project Path="src/InvoiceSorter.Core/InvoiceSorter.Core.csproj" />
+    <Project Path="src/InvoiceSorter.Server/InvoiceSorter.Server.csproj" />
+    <Project Path="src/InvoiceSorter.ServerManager/InvoiceSorter.ServerManager.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/InvoiceSorter.Tests/InvoiceSorter.Tests.csproj" />
+  </Folder>
+</Solution>
