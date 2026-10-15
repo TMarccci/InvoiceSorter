@@ -33,6 +33,16 @@ public sealed class SuryaOcr : IDisposable
     public bool IsServer => _server != null;
 
     /// <summary>
+    /// How many pages to have under way at the same time. A local worker reads one page at a time anyway; with a server,
+    /// a few pages in flight hide the upload / network time (VPN), so the server's GPU does not wait for this computer.
+    /// Independent of the number of processor cores (a small VPS would otherwise send one page at a time).
+    /// </summary>
+    public int PagesInFlight => IsServer ? 3 : 1;
+
+    // Server timing (for the log): upload, waiting in the queue, reading on the server, whole round trip.
+    private long _pages, _bytes, _uploadMs, _queueMs, _runMs, _totalMs;
+
+    /// <summary>
     /// Waiting in the server's queue: "Sorban áll a szerveren: 3. hely" (empty when the page is being read).
     /// Raised from a background thread.
     /// </summary>
@@ -225,7 +235,9 @@ public sealed class SuryaOcr : IDisposable
     {
         var bytes = await File.ReadAllBytesAsync(imagePath, ct);
         var type = Path.GetExtension(imagePath).Equals(".png", StringComparison.OrdinalIgnoreCase) ? "image/png" : "image/jpeg";
+        var watch = Stopwatch.StartNew();
         var job = await _server!.SubmitOcrJobAsync(bytes, type, ct);
+        long uploadMs = watch.ElapsedMilliseconds;
         try
         {
             int lastPosition = -1;
@@ -252,6 +264,19 @@ public sealed class SuryaOcr : IDisposable
         QueueStatusChanged?.Invoke("");
         if (job.Status != "done" || job.Result == null)
             throw new InvalidOperationException("Szerver: " + (job.Error ?? "a Surya nem olvasta el az oldalt"));
+
+        // Server times come from one clock (the server's), so they are comparable.
+        long queueMs = job.StartedAt is { } s ? (long)Math.Max(0, (s - job.QueuedAt).TotalMilliseconds) : 0;
+        long runMs = job.StartedAt is { } s2 && job.FinishedAt is { } f ? (long)Math.Max(0, (f - s2).TotalMilliseconds) : 0;
+        long totalMs = watch.ElapsedMilliseconds;
+        Interlocked.Increment(ref _pages);
+        Interlocked.Add(ref _bytes, bytes.Length);
+        Interlocked.Add(ref _uploadMs, uploadMs);
+        Interlocked.Add(ref _queueMs, queueMs);
+        Interlocked.Add(ref _runMs, runMs);
+        Interlocked.Add(ref _totalMs, totalMs);
+        AppLog.Debug($"Surya (szerver): {Path.GetFileName(imagePath)} {bytes.Length / 1024} KB – feltöltés {uploadMs / 1000.0:0.0} mp, " +
+                     $"sorban {queueMs / 1000.0:0.0} mp, olvasás {runMs / 1000.0:0.0} mp, összesen {totalMs / 1000.0:0.0} mp");
         return ToLines(job.Result);
     }
 
@@ -378,6 +403,13 @@ public sealed class SuryaOcr : IDisposable
             }
             catch { /* already gone */ }
             _process.Dispose();
+        }
+        if (_server != null && _pages > 0)
+        {
+            double n = _pages;
+            AppLog.Info($"Surya a szerveren: {_pages} oldal, átlagosan {_bytes / n / 1024:0} KB/oldal – feltöltés {_uploadMs / n / 1000:0.0} mp, " +
+                        $"várakozás a sorban {_queueMs / n / 1000:0.0} mp, olvasás {_runMs / n / 1000:0.0} mp, teljes kör {_totalMs / n / 1000:0.0} mp " +
+                        $"({PagesInFlight} oldal párhuzamosan)");
         }
         _server?.Dispose();
         _lock.Dispose();

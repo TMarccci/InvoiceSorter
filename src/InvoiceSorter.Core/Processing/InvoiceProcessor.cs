@@ -91,12 +91,12 @@ public static class InvoiceProcessor
     {
         var pages = job.Pages.Where(p => !p.IsBlank && p.Error == null && File.Exists(p.ImagePath)).ToList();
         int done = 0;
-        foreach (var page in pages)
+        var options = new ParallelOptions { CancellationToken = ct, MaxDegreeOfParallelism = surya.PagesInFlight };
+        await Parallel.ForEachAsync(pages, options, async (page, token) =>
         {
-            ct.ThrowIfCancellationRequested();
             try
             {
-                var lines = await surya.RecognizeAsync(page.ImagePath, ct);
+                var lines = await surya.RecognizeAsync(page.ImagePath, token);
                 var windows = new PageInfo
                 {
                     Index = page.Index, ImagePath = page.ImagePath, PixelWidth = page.PixelWidth, PixelHeight = page.PixelHeight,
@@ -111,8 +111,8 @@ public static class InvoiceProcessor
             {
                 AppLog.Warn($"{page.Number}. oldal: a Surya OCR nem sikerült, a Windows OCR szövege marad. {ex.Message}");
             }
-            progress?.Report(new ProgressInfo(ProgressInfo.SuryaAllPages, ++done, pages.Count, $"{page.Number}. oldal", page));
-        }
+            progress?.Report(new ProgressInfo(ProgressInfo.SuryaAllPages, Interlocked.Increment(ref done), pages.Count, $"{page.Number}. oldal", page));
+        });
         AppLog.Info($"A Surya OCR {done} oldalt olvasott el");
     }
 

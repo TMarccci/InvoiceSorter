@@ -8,7 +8,7 @@
 ;            eltávolításkor megmaradnak; csak a rendszergazdák és a SYSTEM érik el (a kulcsok miatt).
 
 #ifndef AppVersion
-  #define AppVersion "1.2.0"
+  #define AppVersion "1.2.1"
 #endif
 #ifndef ServerDir
   #define ServerDir "..\..\publish\server"

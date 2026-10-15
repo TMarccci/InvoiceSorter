@@ -83,7 +83,10 @@ public static class PageRefiner
 
         var engines = new ConcurrentDictionary<string, ConcurrentBag<OcrEngine>>();
         int done = 0, fixedCount = 0;
-        var options = new ParallelOptions { CancellationToken = ct, MaxDegreeOfParallelism = Math.Clamp(Environment.ProcessorCount / 2, 1, 4) };
+        // With Surya on a server several invoices are under way at once, whatever the number of cores of this computer.
+        int parallel = Math.Clamp(Environment.ProcessorCount / 2, 1, 4);
+        if (surya != null && passes.Any(p => p.Surya)) parallel = Math.Max(parallel, surya.PagesInFlight);
+        var options = new ParallelOptions { CancellationToken = ct, MaxDegreeOfParallelism = parallel };
 
         await Parallel.ForEachAsync(documents, options, async (doc, token) =>
         {

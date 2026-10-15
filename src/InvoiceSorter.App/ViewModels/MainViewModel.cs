@@ -93,7 +93,8 @@ public sealed class MainViewModel : ObservableObject
 
         AppLog.Info($"Invoice Sorter {Version} elindult. {Styles.Count} sablon betöltve " +
                     (IsCentral ? $"(központi konfiguráció, {Settings.CentralServerUrl})" : $"({AppPaths.StylesFile})"));
-        AppLog.Info($"Windows OCR nyelvek: {string.Join(", ", PageAnalyzer.AvailableOcrLanguages())}");
+        AppLog.Info($"Windows OCR nyelvek: {string.Join(", ", PageAnalyzer.AvailableOcrLanguages())}; " +
+                    $"{Environment.OSVersion.VersionString}, {Environment.ProcessorCount} processzormag");
     }
 
     /// <summary>Called by the window once it is shown: central configuration and update check in the background.</summary>

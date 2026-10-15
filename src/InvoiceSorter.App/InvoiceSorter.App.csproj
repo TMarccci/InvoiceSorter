@@ -10,7 +10,7 @@
     <AssemblyName>InvoiceSorter</AssemblyName>
     <RootNamespace>InvoiceSorter.App</RootNamespace>
     <Product>Invoice Sorter</Product>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
     <Company>TMarccci</Company>
     <Authors>TMarccci</Authors>
     <Copyright>© TMarccci</Copyright>
