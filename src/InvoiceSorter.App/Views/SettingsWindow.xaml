@@ -176,8 +176,7 @@
         <ScrollViewer x:Name="PageScroll" VerticalScrollBarVisibility="Auto" Padding="24,18,24,8">
             <StackPanel MaxWidth="780" HorizontalAlignment="Left">
             <Border x:Name="CentralBanner" Background="#EEF2FF" BorderBrush="#C7D2FE" BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,0,14" Visibility="Collapsed">
-                <TextBlock TextWrapping="Wrap" Foreground="#3730A3"
-                           Text="Központi konfiguráció: ezeket a beállításokat a szerver rendszergazdája kezeli a szerverkezelőben, itt csak megtekinthetők. Helyi szerkesztéshez válts 'Helyi konfiguráció'-ra a Konfiguráció oldalon." />
+                <TextBlock x:Name="CentralBannerText" TextWrapping="Wrap" Foreground="#3730A3" />
             </Border>
             <Grid x:Name="PagesGrid">
 

@@ -14,7 +14,7 @@
                     <!-- New version on GitHub -->
                     <Button Click="Update_Click" Margin="0,0,12,0" Padding="10,4" Cursor="Hand"
                             Background="#6366F1" Foreground="White" BorderThickness="0"
-                            ToolTip="A kiadások oldalának megnyitása (letöltés és telepítés)"
+                            ToolTip="Az új verzió letöltése és telepítése"
                             Visibility="{Binding AvailableUpdate, Converter={StaticResource NullToVis}}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE896;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,6,0" />

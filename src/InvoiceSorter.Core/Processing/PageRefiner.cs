@@ -145,7 +145,7 @@ public static class PageRefiner
         var decoder = await BitmapDecoder.CreateAsync(stream);
 
         // Windows OCR accepts images up to OcrEngine.MaxImageDimension pixels.
-        double scale = Math.Min(requestedScale, (OcrEngine.MaxImageDimension - 1) / (double)Math.Max(decoder.PixelWidth, decoder.PixelHeight));
+        double scale = Math.Min(requestedScale, PageAnalyzer.MaxOcrPixels / (double)Math.Max(decoder.PixelWidth, decoder.PixelHeight));
         uint w = (uint)(decoder.PixelWidth * scale), h = (uint)(decoder.PixelHeight * scale);
         var transform = new BitmapTransform { ScaledWidth = w, ScaledHeight = h, InterpolationMode = BitmapInterpolationMode.Fant };
         using var bitmap = await decoder.GetSoftwareBitmapAsync(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied, transform,

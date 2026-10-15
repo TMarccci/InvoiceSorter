@@ -66,6 +66,15 @@
         <!-- Header -->
         <Border DockPanel.Dock="Top" Background="{StaticResource HeaderBrush}" Padding="20,10">
             <DockPanel>
+                <Button DockPanel.Dock="Right" Click="Update_Click" Margin="12,0,0,0" Padding="10,4" Cursor="Hand"
+                        Background="#6366F1" Foreground="White" BorderThickness="0" VerticalAlignment="Center"
+                        ToolTip="A szerver új verziójának letöltése és telepítése (a szolgáltatás rövid időre leáll)"
+                        Visibility="{Binding AvailableUpdate, Converter={StaticResource NullToVis}}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE896;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                        <TextBlock Text="{Binding UpdateText}" FontWeight="SemiBold" />
+                    </StackPanel>
+                </Button>
                 <Border DockPanel.Dock="Right" CornerRadius="10" Padding="10,3" VerticalAlignment="Center">
                     <Border.Style>
                         <Style TargetType="Border">

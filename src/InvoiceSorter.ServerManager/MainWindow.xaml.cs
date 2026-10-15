@@ -26,7 +26,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         _vm = new ManagerViewModel(dataDir);
         DataContext = _vm;
-        VersionText.Text = "v" + ((Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "1.0.0").Split('+')[0]);
+        VersionText.Text = "v" + ManagerViewModel.Version;
         CertPasswordBox.Password = _vm.Edit.CertificatePassword;
         Loaded += (_, _) => _vm.Start();
     }
@@ -35,6 +35,12 @@ public partial class MainWindow : Window
     {
         PageScroll?.ScrollToTop();
         if (Nav.SelectedIndex == 4) LoadLog();
+    }
+
+    private async void Update_Click(object sender, RoutedEventArgs e)
+    {
+        if (_vm.AvailableUpdate is { } release)
+            await global::InvoiceSorter.App.UpdateInstaller.RunAsync(this, release, UpdateChecker.ServerInstaller, "Invoice Sorter Server", t => _vm.UpdateText = t);
     }
 
     // ------------------------------------------------------------------------------------------ service

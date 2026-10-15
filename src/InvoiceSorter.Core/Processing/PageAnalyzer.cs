@@ -80,7 +80,7 @@ public sealed class PageAnalyzer : IDisposable
         int total = PageCount;
         int done = 0;
         var pages = new PageInfo[total];
-        AppLog.Info($"{total} oldal olvasása Windows OCR-rel ({_language.LanguageTag}), {settings.RenderDpi} DPI");
+        AppLog.Info($"{total} oldal olvasása Windows OCR-rel ({_language.LanguageTag}), {settings.RenderDpi} DPI, legnagyobb képméret {OcrEngine.MaxImageDimension} px");
 
         var options = new ParallelOptions
         {
@@ -141,9 +141,9 @@ public sealed class PageAnalyzer : IDisposable
             var engine = RentEngine();
             try
             {
-                var result = await engine.RecognizeAsync(upright);
+                var result = await RecognizeFittedAsync(engine, upright);
                 int rotation = 0;
-                int score = QualityScore(result);
+                int score = QualityScore(result.Result);
 
                 // Pages scanned sideways/upside down produce mostly garbage words: try the other orientations.
                 if (settings.AutoRotate && score < 40)
@@ -152,8 +152,8 @@ public sealed class PageAnalyzer : IDisposable
                     {
                         ct.ThrowIfCancellationRequested();
                         var candidate = await DecodeAsync(decoder, rot);
-                        var r = await engine.RecognizeAsync(candidate);
-                        var s = QualityScore(r);
+                        var r = await RecognizeFittedAsync(engine, candidate);
+                        var s = QualityScore(r.Result);
                         if (s > score * 1.5 && s >= 10)
                         {
                             upright.Dispose();
@@ -171,7 +171,7 @@ public sealed class PageAnalyzer : IDisposable
                 }
 
                 page.Rotation = rotation;
-                page.Lines = ToLines(result, upright.PixelWidth, upright.PixelHeight);
+                page.Lines = result.Lines;
             }
             finally
             {
@@ -205,9 +205,13 @@ public sealed class PageAnalyzer : IDisposable
             double w = pdfPage.Size.Width * dpi / 96.0;
             // Till receipts are narrow pages with small print: render them at least ~1300 px wide (as long as the
             // height stays within what the OCR engine accepts), otherwise whole lines get lost.
+            double aspect = pdfPage.Size.Height / Math.Max(1, pdfPage.Size.Width);
             if (pdfPage.Size.Width > 0 && pdfPage.Size.Width < 4.5 * 96)
-                w = Math.Max(w, Math.Min(1300, 9500 * pdfPage.Size.Width / Math.Max(1, pdfPage.Size.Height)));
-            var width = (uint)Math.Clamp(Math.Round(w), 200, 9000);
+                w = Math.Max(w, Math.Min(1300, MaxOcrPixels / aspect));
+            // Neither side may exceed what the OCR engine of this Windows accepts (Windows 10 allows much smaller
+            // images than Windows 11): large pages are rendered at a lower resolution instead of failing.
+            w = Math.Min(w, Math.Min(MaxOcrPixels, MaxOcrPixels / aspect));
+            var width = (uint)Math.Clamp(Math.Round(w), 200, MaxOcrPixels);
             var options = new PdfPageRenderOptions
             {
                 DestinationWidth = width,
@@ -222,6 +226,47 @@ public sealed class PageAnalyzer : IDisposable
         {
             _renderLock.Release();
         }
+    }
+
+    /// <summary>
+    /// The largest image side the Windows OCR engine of this computer accepts (a little margin kept). For testing,
+    /// INVOICESORTER_OCR_MAX_PIXELS sets a smaller limit (e.g. to try the behaviour of an older Windows).
+    /// </summary>
+    internal static int MaxOcrPixels { get; } = Math.Min(
+        (int)Math.Max(1000, OcrEngine.MaxImageDimension - 2),
+        int.TryParse(Environment.GetEnvironmentVariable("INVOICESORTER_OCR_MAX_PIXELS"), out var limit) && limit >= 1000 ? limit : int.MaxValue);
+
+    /// <summary>A Windows OCR result and the size of the image that was actually read (word boxes are in its pixels).</summary>
+    internal sealed record OcrRun(OcrResult Result, int Width, int Height)
+    {
+        public List<OcrTextLine> Lines => ToLines(Result, Width, Height);
+    }
+
+    /// <summary>
+    /// Windows OCR of a bitmap; an image larger than <see cref="OcrEngine.MaxImageDimension"/> is scaled down first
+    /// (the normalized coordinates of <see cref="OcrRun.Lines"/> fit the original image as well).
+    /// </summary>
+    internal static async Task<OcrRun> RecognizeFittedAsync(OcrEngine engine, SoftwareBitmap bitmap)
+    {
+        int longest = Math.Max(bitmap.PixelWidth, bitmap.PixelHeight);
+        if (longest <= MaxOcrPixels) return new OcrRun(await engine.RecognizeAsync(bitmap), bitmap.PixelWidth, bitmap.PixelHeight);
+        using var scaled = await ScaleAsync(bitmap, MaxOcrPixels / (double)longest);
+        return new OcrRun(await engine.RecognizeAsync(scaled), scaled.PixelWidth, scaled.PixelHeight);
+    }
+
+    private static async Task<SoftwareBitmap> ScaleAsync(SoftwareBitmap bitmap, double scale)
+    {
+        using var opaque = SoftwareBitmap.Convert(bitmap, BitmapPixelFormat.Bgra8, BitmapAlphaMode.Ignore);
+        using var mem = new InMemoryRandomAccessStream();
+        var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.BmpEncoderId, mem);
+        encoder.SetSoftwareBitmap(opaque);
+        encoder.BitmapTransform.ScaledWidth = (uint)Math.Max(1, Math.Floor(bitmap.PixelWidth * scale));
+        encoder.BitmapTransform.ScaledHeight = (uint)Math.Max(1, Math.Floor(bitmap.PixelHeight * scale));
+        encoder.BitmapTransform.InterpolationMode = BitmapInterpolationMode.Fant;
+        await encoder.FlushAsync();
+        mem.Seek(0);
+        var decoder = await BitmapDecoder.CreateAsync(mem);
+        return await DecodeAsync(decoder, BitmapRotation.None);
     }
 
     private static async Task<SoftwareBitmap> DecodeAsync(BitmapDecoder decoder, BitmapRotation rotation)
@@ -331,7 +376,7 @@ public sealed class PageAnalyzer : IDisposable
         {
             var engine = OcrEngine.TryCreateFromLanguage(SelectLanguage(ocrLanguage))
                          ?? throw new InvalidOperationException("A Windows OCR-motor nem hozható létre");
-            var result = await engine.RecognizeAsync(rotated);
+            var result = await RecognizeFittedAsync(engine, rotated);
 
             page.Rotation = (page.Rotation + degreesClockwise) % 360;
             // A new file name: the old image may still be cached by the viewer.
@@ -344,7 +389,7 @@ public sealed class PageAnalyzer : IDisposable
             page.ExtraReadings = new();
             page.RefinePassesDone = 0;
             page.Engine = "Windows";
-            page.Lines = ToLines(result, rotated.PixelWidth, rotated.PixelHeight);
+            page.Lines = result.Lines;
         }
         AppLog.Info($"{page.Number}. oldal: kézzel elforgatva {degreesClockwise}°-kal (most {page.Rotation}°), {page.WordCount} szó olvasva");
     }

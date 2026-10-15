@@ -63,6 +63,10 @@ public sealed class CentralClient : IDisposable
     public Task LearnIssuerAsync(string name, string? taxNumber, CancellationToken ct = default) =>
         SendAsync<RevisionInfo>(HttpMethod.Post, "api/issuers/learn", JsonContent.Create(new LearnIssuerRequest { Name = name, TaxNumber = taxNumber }, options: Json), null, ct);
 
+    /// <summary>A receiving company added on this computer: the server stores it for every client (same tax number: ignored).</summary>
+    public Task AddReceiverAsync(Models.ReceiverCompany company, CancellationToken ct = default) =>
+        SendAsync<RevisionInfo>(HttpMethod.Post, "api/receivers", JsonContent.Create(company, options: Json), null, ct);
+
     public Task<OcrJobInfo> SubmitOcrJobAsync(byte[] image, string contentType, CancellationToken ct = default)
     {
         var content = new ByteArrayContent(image);

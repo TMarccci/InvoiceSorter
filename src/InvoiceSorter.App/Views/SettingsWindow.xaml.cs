@@ -82,9 +82,13 @@ public partial class SettingsWindow : Window
     private void UpdateLock()
     {
         if (PagesGrid == null || _vm == null) return;
-        bool locked = _centralLocked && _vm.IsCentralMode && Nav.SelectedIndex > 0;
-        CentralBanner.Visibility = locked ? Visibility.Visible : Visibility.Collapsed;
-        PagesGrid.IsEnabled = !locked;
+        bool central = _centralLocked && _vm.IsCentralMode && Nav.SelectedIndex > 0;
+        bool receivers = Nav.SelectedIndex == 1;   // new receiving companies can be added: they go to the server
+        CentralBanner.Visibility = central ? Visibility.Visible : Visibility.Collapsed;
+        CentralBannerText.Text = receivers
+            ? "Központi konfiguráció: az itt felvett új vevő cégek mentéskor a szerverre kerülnek, és minden gép megkapja őket. Meglévő cég módosítása vagy törlése a szerverkezelőben lehetséges."
+            : "Központi konfiguráció: ezeket a beállításokat a szerver rendszergazdája kezeli a szerverkezelőben, itt csak megtekinthetők. Helyi szerkesztéshez válts 'Helyi konfiguráció'-ra a Konfiguráció oldalon.";
+        PagesGrid.IsEnabled = !central || receivers;
     }
 
     private void CentralKey_Changed(object sender, RoutedEventArgs e) => _vm.Settings.CentralClientKey = CentralKeyBox.Password;
@@ -125,12 +129,6 @@ public partial class SettingsWindow : Window
             Nav.SelectedIndex = 0;
             return;
         }
-        if (_centralLocked && _vm.IsCentralMode)
-        {
-            DialogResult = true;   // only the Configuration page could be changed
-            return;
-        }
-
         var receivers = _vm.Receivers.Where(r => !string.IsNullOrWhiteSpace(r.VatNumber)).ToList();
         if (receivers.Count == 0 && !_vm.IsCentralMode &&
             MessageBox.Show(this, "Nincs megadva vevő cég adószáma, így minden számla hibásnak számít.\n\nMégis mented?",

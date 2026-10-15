@@ -109,6 +109,28 @@ public sealed class CentralStore
         }
     }
 
+    /// <summary>
+    /// A receiving company added on a client: stored in the central settings, so every computer gets it. Null when the
+    /// tax number is invalid; false when a company with the same tax number (first 8 digits) is already there.
+    /// </summary>
+    public bool? AddReceiver(string name, string vatNumber, string who)
+    {
+        var tax = VatValidator.Parse(vatNumber);
+        if (tax == null || !VatValidator.IsChecksumValid(tax.Core)) return null;
+        lock (_sync)
+        {
+            if (_config.Settings.ReceiverCompanies.Any(r => VatValidator.Parse(r.VatNumber)?.Core == tax.Core)) return false;
+            Backup();
+            _config.Settings.ReceiverCompanies.Add(new ReceiverCompany { Name = name.Trim(), VatNumber = vatNumber.Trim() });
+            _config.Revision++;
+            _config.UpdatedAt = DateTime.Now;
+            _config.UpdatedBy = who;
+            Write(_config);
+            AppLog.Info($"Vevő cég hozzáadva: {name} {vatNumber} ({who}) – {_config.Revision}. változat");
+            return true;
+        }
+    }
+
     private void Backup()
     {
         try

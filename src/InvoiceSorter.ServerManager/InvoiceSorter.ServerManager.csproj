@@ -14,7 +14,7 @@
     <Authors>TMarccci</Authors>
     <Copyright>© TMarccci</Copyright>
     <Description>Az Invoice Sorter szerver kezelése: szolgáltatás, központi sablonok és beállítások, Surya-sor</Description>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <ApplicationIcon>..\..\assets\invoicesorter-server.ico</ApplicationIcon>
     <!-- Starting / stopping the service and reading the keys in the data folder need administrator rights. -->
     <ApplicationManifest Condition="'$(NoElevation)' != 'true'">app.manifest</ApplicationManifest>

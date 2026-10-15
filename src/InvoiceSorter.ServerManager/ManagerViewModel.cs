@@ -7,6 +7,7 @@ using System.ServiceProcess;
 using System.Windows;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using InvoiceSorter.Core;
 using InvoiceSorter.Core.Central;
 using InvoiceSorter.Core.Logging;
 using InvoiceSorter.Core.Storage;
@@ -43,6 +44,38 @@ public sealed class ManagerViewModel : ObservableObject
     {
         _timer.Start();
         _ = RefreshAsync();
+        _ = CheckForUpdatesAsync();
+    }
+
+    // ------------------------------------------------------------------------------------------ new version
+
+    public static string Version { get; } = (System.Reflection.Assembly.GetExecutingAssembly()
+        .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+        .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion ?? "1.0.0").Split('+')[0];
+
+    private UpdateChecker.Release? _update;
+    private string _updateText = "";
+
+    /// <summary>A newer release on GitHub (its server installer updates the service and the manager).</summary>
+    public UpdateChecker.Release? AvailableUpdate
+    {
+        get => _update;
+        private set { SetProperty(ref _update, value); UpdateText = value == null ? "" : $"Új verzió érhető el: {value.Version} – telepítés"; }
+    }
+
+    public string UpdateText { get => _updateText; set => SetProperty(ref _updateText, value); }
+
+    private async Task CheckForUpdatesAsync()
+    {
+        try
+        {
+            AvailableUpdate = await UpdateChecker.CheckAsync(Version);
+            if (AvailableUpdate != null) AppLog.Info($"Szerverkezelő: új verzió érhető el: {AvailableUpdate.Version}");
+        }
+        catch (Exception ex)
+        {
+            AppLog.Debug($"A frissítések nem ellenőrizhetők: {ex.Message}");
+        }
     }
 
     public CentralClient Client() => new($"http://127.0.0.1:{Config.Port}", Config.AdminKey, TimeSpan.FromSeconds(30));

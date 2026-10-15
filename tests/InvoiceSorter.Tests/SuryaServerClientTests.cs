@@ -258,6 +258,20 @@ public sealed class SuryaServerClientTests : IDisposable
         Assert.Equal(newer, UpdateChecker.IsNewer(candidate, current));
 
     [Fact]
+    public void ReleaseInstallersAreFoundByName()
+    {
+        var release = UpdateChecker.Parse("""
+            {"tag_name":"v1.2.0","html_url":"https://github.com/x/y/releases/tag/v1.2.0","name":"Invoice Sorter 1.2.0",
+             "assets":[{"name":"InvoiceSorter-Server-Setup-1.2.0.exe","browser_download_url":"https://e/s.exe","size":100},
+                       {"name":"InvoiceSorter-Setup-1.2.0.exe","browser_download_url":"https://e/c.exe","size":50},
+                       {"name":"SHA256SUMS.txt","browser_download_url":"https://e/sums","size":1}]}
+            """)!;
+        Assert.Equal("1.2.0", release.Version);
+        Assert.Equal("https://e/c.exe", release.Installer(UpdateChecker.ClientInstaller)!.Url);
+        Assert.Equal("https://e/s.exe", release.Installer(UpdateChecker.ServerInstaller)!.Url);
+    }
+
+    [Fact]
     public void OldSettingsKeepRunningSuryaLocally()
     {
         var old = JsonSerializer.Deserialize<AppSettings>("{\"SuryaMode\":\"UnclearOnly\",\"SuryaPython\":\"\"}", JsonStore.Options)!;

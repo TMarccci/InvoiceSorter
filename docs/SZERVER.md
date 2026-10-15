@@ -41,8 +41,9 @@ Az Invoice Sorter szerver két dolgot ad a hálózat klienseinek:
      érik el).
 3. A végén megnyílik a **szerverkezelő**. Az *Áttekintés* oldalon látod a szerver címét és a **kliens kulcsot**.
 
-**Frissítés:** futtasd az új telepítőt. Leállítja a szolgáltatást, kicseréli a fájlokat, és újraindítja; a
-konfiguráció és a kulcsok megmaradnak.
+**Frissítés:** ha új verzió jelenik meg, a szerverkezelő fejlécében megjelenik az **„Új verzió érhető el”** gomb –
+erre kattintva letölti és elindítja az új szerver-telepítőt. (Kézzel is futtathatod az új telepítőt.) A telepítő
+leállítja a szolgáltatást, kicseréli a fájlokat, és újraindítja; a konfiguráció és a kulcsok megmaradnak.
 
 Első induláskor a szerver a beépített sablonokkal hozza létre a központi konfigurációt. Ha egy kliensen már
 kialakult egy jó helyi konfiguráció, vedd át: *Központi konfiguráció › Helyi konfiguráció importálása…*, és
@@ -147,6 +148,7 @@ küldik (ez látszik a sorban). A válaszok JSON-ok; hiba esetén `{"error": "�
 | `GET /api/config` | kliens | a teljes központi konfiguráció: `revision`, `updatedAt`, `updatedBy`, `styles`, `settings` |
 | `PUT /api/config` | admin | új konfiguráció: `{"styles": […], "settings": {…}, "basedOnRevision": 12}`; ha közben más mentett: **409** |
 | `POST /api/issuers/learn` | kliens | kézzel javított kibocsátónév: `{"name": "…", "taxNumber": "12345678-2-41"}` |
+| `POST /api/receivers` | kliens | új vevő cég: `{"name": "…", "vatNumber": "12345678-2-41"}` → `{added, revision}`; azonos adószám: `added: false`; érvénytelen adószám: **400** |
 | `POST /api/ocr/jobs` | kliens | egy oldalkép (törzs: JPEG/PNG bájtok) a Surya-sorba → **202** `{id, status: "queued", position}`; tele: **429**; nincs Surya: **503** |
 | `GET /api/ocr/jobs/{id}?wait=20` | kliens | a feladat állapota; `wait` másodpercig vár, amíg változik (long polling). Kész: `status: "done"` + `result` (sorok, szavak, koordináták) |
 | `DELETE /api/ocr/jobs/{id}` | kliens | a feladat törlése a sorból |

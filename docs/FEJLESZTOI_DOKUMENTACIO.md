@@ -60,7 +60,7 @@ Fontosabb Core-osztályok:
 | `Central/CentralClient` | a szerver HTTP-kliense (magyar hibaüzenetekkel) |
 | `Central/CentralSync` | központi konfiguráció letöltése, helyi gyorsítótár |
 | `Central/ServerConfig` | a szerver `server.json`-ja (a szerver és a szerverkezelő közös) |
-| `UpdateChecker` | új verzió keresése a GitHub Releases API-n |
+| `UpdateChecker` | új verzió keresése a GitHub Releases API-n, a telepítő letöltése és indítása |
 
 ## Fejlesztői környezet
 
@@ -204,7 +204,10 @@ pwsh scripts/build-server.ps1 -Version 1.2.3     # publish/server/*.exe + instal
   A kiadás csatolmányai: `InvoiceSorter-Setup-x.y.z.exe`, `InvoiceSorter-Server-Setup-x.y.z.exe`, `SHA256SUMS.txt`.
 - A kliens az `UpdateChecker`-rel a `releases/latest` végpontot kérdezi; a címke verzióját a futó program
   `AssemblyInformationalVersion`-jével veti össze. Ezért a kiadás ne legyen *pre-release*, és a címke
-  `x.y.z` / `vx.y.z` alakú legyen.
+  `x.y.z` / `vx.y.z` alakú legyen. A kliens és a szerverkezelő frissítés gombja (`UpdateInstaller`) a kiadás
+  csatolmányai közül a nevük alapján választja ki a telepítőt (`InvoiceSorter-Setup-` / `InvoiceSorter-Server-Setup-`),
+  letölti a `%TEMP%\InvoiceSorter-update` mappába, elindítja, és bezárja a programot – a csatolmányok nevét ne
+  változtasd meg.
 
 ## Arculat
 

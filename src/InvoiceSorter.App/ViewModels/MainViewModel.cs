@@ -208,8 +208,16 @@ public sealed class MainViewModel : ObservableObject
 
     private UpdateChecker.Release? _update;
 
-    public UpdateChecker.Release? AvailableUpdate { get => _update; private set { SetProperty(ref _update, value); OnPropertyChanged(nameof(UpdateText)); } }
-    public string UpdateText => _update == null ? "" : $"Új verzió érhető el: {_update.Version}";
+    private string _updateText = "";
+
+    public UpdateChecker.Release? AvailableUpdate
+    {
+        get => _update;
+        private set { SetProperty(ref _update, value); UpdateText = value == null ? "" : $"Új verzió érhető el: {value.Version} – telepítés"; }
+    }
+
+    /// <summary>Text of the update button (also the download progress).</summary>
+    public string UpdateText { get => _updateText; set => SetProperty(ref _updateText, value); }
 
     private async Task CheckForUpdatesAsync()
     {
@@ -225,11 +233,8 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
-    public void OpenUpdatePage()
-    {
-        var url = AvailableUpdate?.Url ?? UpdateChecker.ReleasesPage;
-        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-    }
+    public Task InstallUpdateAsync() => AvailableUpdate == null ? Task.CompletedTask :
+        UpdateInstaller.RunAsync(Application.Current.MainWindow!, AvailableUpdate, UpdateChecker.ClientInstaller, "Invoice Sorter", t => UpdateText = t);
 
     // ---------------------------------------------------------------- Surya queue on the server
 
@@ -313,8 +318,8 @@ public sealed class MainViewModel : ObservableObject
         Settings.ReceiverCompanies.Add(company);
         if (IsCentral)
         {
-            // The list of receiving companies belongs to the central configuration: valid for this scan only.
-            AppLog.Info($"Vevő cég felvéve erre a szkennelésre: {company.Name} {company.VatNumber} – végleges felvétele a szerverkezelőben lehetséges");
+            // The list of receiving companies belongs to the central configuration: the server shares it with every computer.
+            _ = SendReceiversAsync(new[] { company });
         }
         else
         {
@@ -1196,10 +1201,16 @@ public sealed class MainViewModel : ObservableObject
         AppLog.Info($"Sablonok mentve ({Styles.Count} db)");
     }
 
-    /// <summary>Settings from the settings window. In central mode only the machine-specific fields could be edited.</summary>
+    /// <summary>
+    /// Settings from the settings window. In central mode only the machine-specific fields and new receiving companies
+    /// (sent to the server) could be edited.
+    /// </summary>
     public async void ReplaceSettings(AppSettings settings)
     {
         bool wasCentral = IsCentral;
+        var newReceivers = wasCentral && settings.ConfigMode == ConfigMode.Central
+            ? settings.ReceiverCompanies.Where(r => !string.IsNullOrWhiteSpace(r.VatNumber) && !Settings.ReceiverCompanies.Any(c => SameTaxNumber(c.VatNumber, r.VatNumber))).ToList()
+            : new List<ReceiverCompany>();
         var oldServer = (_localSettings.CentralServerUrl, _localSettings.CentralClientKey);
         _localSettings = wasCentral ? AppSettings.MergeCentral(settings, _localSettings) : settings;
         bool modeChanged = wasCentral != (_localSettings.ConfigMode == ConfigMode.Central)
@@ -1220,6 +1231,7 @@ public sealed class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(ProposedFileName));
         AppLog.Info("Beállítások mentve");
         if (modeChanged && IsCentral) await SyncCentralAsync(force: true);
+        if (newReceivers.Count > 0) await SendReceiversAsync(newReceivers);
         if (Settings.CheckForUpdates && AvailableUpdate == null) await CheckForUpdatesAsync();
     }
 
@@ -1235,6 +1247,28 @@ public sealed class MainViewModel : ObservableObject
     {
         try { JsonStore.SaveSettings(_localSettings); }
         catch (Exception ex) { AppLog.Error("A beállítások nem menthetők", ex); }
+    }
+
+    private static bool SameTaxNumber(string a, string b) =>
+        VatValidator.Parse(a)?.Core is { } x && x == VatValidator.Parse(b)?.Core;
+
+    /// <summary>Central mode: receiving companies added on this computer go to the server, which shares them with every computer.</summary>
+    private async Task SendReceiversAsync(IReadOnlyList<ReceiverCompany> companies)
+    {
+        try
+        {
+            using var client = CentralSync.ClientFor(Settings);
+            foreach (var company in companies)
+            {
+                await client.AddReceiverAsync(company);
+                AppLog.Info($"Vevő cég felvéve a központi konfigurációba: {company.Name} {company.VatNumber}");
+            }
+            await SyncCentralAsync();
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warn($"A vevő cég nem küldhető el a szervernek (erre a futásra érvényes marad): {ex.Message}");
+        }
     }
 
     /// <summary>Central mode: the issuer names corrected by hand go to the server, so every computer learns them.</summary>

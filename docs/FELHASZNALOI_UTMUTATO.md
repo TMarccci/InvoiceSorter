@@ -22,8 +22,9 @@ Ez az útmutató a kliensprogram használatát írja le. A szerver telepítésé
 2. Futtasd (rendszergazdai jóváhagyást kér). A program a `C:\Program Files\TMarccci\InvoiceSorter` mappába kerül,
    és megjelenik a Start menüben. Igény szerint asztali ikont és a PDF-ek *Társítás* menüjébe bejegyzést is készít.
 3. **Frissítés:** ha új verzió jelenik meg, a program fejlécében egy lila **„Új verzió érhető el”** gomb jelenik meg.
-   Erre kattintva megnyílik a kiadás oldala; töltsd le és futtasd az új telepítőt – a beállítások és a sablonok
-   megmaradnak. (A jelzés a *Beállítások › Konfiguráció* oldalon kikapcsolható.)
+   Erre kattintva a program letölti és elindítja az új telepítőt, majd bezárul (a *Nem* gombbal csak a kiadás
+   oldala nyílik meg). A beállítások és a sablonok megmaradnak. (A jelzés a *Beállítások › Konfiguráció* oldalon
+   kikapcsolható.)
 
 Az eltávolítás (*Gépház › Alkalmazások*) a felhasználói adatokat (beállítások, sablonok, napló) nem törli.
 
@@ -191,6 +192,8 @@ Központi módban:
   átveszi; a fejlécben a **„Központi konfiguráció · 12. változat”** felirat látszik;
 - a sablonok és a beállítások csak megtekinthetők (szerkeszteni a szerverkezelőben lehet); a sablonokat ki is
   próbálhatod;
+- **új vevő céget** felvehetsz (*Beállítások › Vevő cégek*, vagy az ellenőrző képernyő ajánlatával): a szerverre
+  kerül, és minden gép megkapja. Meglévő cég módosítása vagy törlése a szerverkezelőben lehetséges;
 - a kézzel javított kibocsátónevek a szerverre kerülnek, így minden gép megtanulja őket;
 - a Surya OCR a szerveren fut, sorban állással;
 - ha a szerver nem érhető el, a legutóbb letöltött konfigurációval dolgozik (a fejléc felirata narancssárga).

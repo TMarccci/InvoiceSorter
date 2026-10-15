@@ -34,7 +34,7 @@ public partial class MainWindow : Window
         ContentRendered += async (_, _) => await ViewModel.StartBackgroundChecksAsync();
     }
 
-    private void Update_Click(object sender, RoutedEventArgs e) => ViewModel.OpenUpdatePage();
+    private async void Update_Click(object sender, RoutedEventArgs e) => await ViewModel.InstallUpdateAsync();
 
     private void Window_Drop(object sender, DragEventArgs e)
     {

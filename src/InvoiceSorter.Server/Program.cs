@@ -8,6 +8,7 @@ using System.Text.Json.Serialization;
 using InvoiceSorter.Core;
 using InvoiceSorter.Core.Central;
 using InvoiceSorter.Core.Logging;
+using InvoiceSorter.Core.Models;
 using InvoiceSorter.Server;
 
 // Invoice Sorter Server: central styles / settings for the clients and a shared Surya OCR queue.
@@ -116,6 +117,16 @@ app.MapPost("/api/issuers/learn", (HttpContext ctx, LearnIssuerRequest request) 
     if (string.IsNullOrWhiteSpace(request.Name)) return Error(400, "Hiányzik a név.");
     store.LearnIssuer(request.Name, request.TaxNumber, Who(ctx));
     return Results.Json(new { revision = store.Revision });
+});
+
+app.MapPost("/api/receivers", (HttpContext ctx, ReceiverCompany company) =>
+{
+    if (!IsClient(ctx)) return Unauthorized();
+    if (string.IsNullOrWhiteSpace(company.VatNumber)) return Error(400, "Hiányzik az adószám.");
+    var added = store.AddReceiver(string.IsNullOrWhiteSpace(company.Name) ? $"Cég {company.VatNumber}" : company.Name, company.VatNumber, Who(ctx));
+    return added == null
+        ? Error(400, $"Érvénytelen adószám: {company.VatNumber}")
+        : Results.Json(new { added = added.Value, revision = store.Revision });
 });
 
 app.MapPost("/api/ocr/jobs", async (HttpContext ctx) =>
