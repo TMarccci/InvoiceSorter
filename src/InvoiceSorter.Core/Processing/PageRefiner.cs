@@ -64,8 +64,13 @@ public static class PageRefiner
         bool Readable(FieldDefinition f) => f.Mode == FieldMode.Fixed
             ? !string.IsNullOrWhiteSpace(f.FixedValue)
             : doc.Pages.Any(p => InvoiceProcessor.ReadFieldWithFallback(f, p, settings).Value != null);
-        return Readable(style.Issuer) && Readable(style.InvoiceNumber)
-               && (doc.VatApproved || InvoiceProcessor.CheckVat(doc.Pages, settings).Status == VatStatus.Valid);
+        if (!(Readable(style.Issuer) && Readable(style.InvoiceNumber)
+              && (doc.VatApproved || InvoiceProcessor.CheckVat(doc.Pages, settings).Status == VatStatus.Valid)))
+            return false;
+        // The dates too: an invoice with a missing or undecidable date is re-read (a clearer reading may settle it).
+        if (!settings.DatesRequired || doc.DatesApproved) return true;
+        var dates = DateReader.Read(doc, settings);
+        return dates.Issue.Value != null && dates.Fulfillment.Value != null && dates.Due.Value != null;
     }
 
     /// <summary>

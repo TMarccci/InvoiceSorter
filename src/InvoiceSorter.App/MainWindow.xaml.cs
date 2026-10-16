@@ -109,6 +109,28 @@ public partial class MainWindow : Window
         else ViewModel.ApplyNumberSuggestion(s.Value);
     }
 
+    /// <summary>A suggested date chip was clicked: it becomes the value of its date field.</summary>
+    private void DateSuggestion_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { DataContext: InvoiceSorter.Core.Processing.InvoiceProcessor.ValueSuggestion s } button) return;
+        var kind = (button.Tag as string) switch
+        {
+            "issue" => InvoiceSorter.Core.Processing.DateKind.Issue,
+            "fulfillment" => InvoiceSorter.Core.Processing.DateKind.Fulfillment,
+            _ => InvoiceSorter.Core.Processing.DateKind.Due,
+        };
+        ViewModel.ApplyDateSuggestion(kind, s.Value);
+    }
+
+    /// <summary>Enter in a date field commits the typed date (it is normalized to 2026.09.02.).</summary>
+    private void DateBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key != System.Windows.Input.Key.Enter || sender is not TextBox box) return;
+        box.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+        box.SelectAll();
+        e.Handled = true;
+    }
+
     // ---- page thumbnails: drag & drop to reorder
 
     private Point _dragStart;

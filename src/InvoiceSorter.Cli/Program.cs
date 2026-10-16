@@ -62,6 +62,54 @@ switch (args[0])
         Finish(job);
         break;
     }
+    case "dates":
+    {
+        // dates <workDir> [--tokens]: the three dates of every invoice with their source and problems (no re-reading).
+        var job = JobCache.Load(args[1]);
+        InvoiceProcessor.DetectReceiver(job, settings, null);
+        var jobSettings = InvoiceProcessor.SettingsFor(job, settings);
+        InvoiceProcessor.BuildDocuments(job, styles, jobSettings);
+        int complete = 0, partial = 0, none = 0, ambiguous = 0;
+        foreach (var d in job.Documents)
+        {
+            var r = d.DateReading!;
+            int n = new[] { d.IssueDate, d.FulfillmentDate, d.DueDate }.Count(x => x.Length > 0);
+            if (n == 3) complete++; else if (n > 0) partial++; else none++;
+            if (r.Issue.Ambiguous || r.Fulfillment.Ambiguous || r.Due.Ambiguous) ambiguous++;
+            Console.WriteLine($"#{d.Number} p{d.PageRange} [{d.StyleName}] {d.Issuer} | {d.InvoiceNumber}{(r.SingleDateDocument ? " | EGYDÁTUMOS: " + DateReader.SingleDateWhy(d, jobSettings) : "")}");
+            foreach (var kind in new[] { DateKind.Issue, DateKind.Fulfillment, DateKind.Due })
+            {
+                var f = r[kind];
+                Console.WriteLine($"     {DateReader.Name(kind),-18} {(f.Value is { } v ? DateReader.Format(v) : f.Ambiguous ? "?? (nem dönthető el)" : "–"),-22} {f.Source}" +
+                                  (f.Notes.Count > 0 ? "  {" + string.Join("; ", f.Notes) + "}" : ""));
+            }
+            foreach (var p in DateReader.Problems(d)) Console.WriteLine($"     ! {p}");
+            foreach (var (points, reason) in DateReader.Doubts(d)) Console.WriteLine($"     ~ -{points} {reason}");
+            if (args.Contains("--tokens"))
+                foreach (var t in r.Tokens.Where(t => t.Token.ReadingIndex == 0))
+                    Console.WriteLine($"       · p{t.Token.PageNumber} {DateReader.Format(t.Token.Date)} '{t.Token.Text}' " +
+                                      $"{(t.Kind is { } k ? DateReader.Name(k) : t.Excluded ? "KIZÁRT" : t.Conflict ? "ÜTKÖZÉS " + string.Join("/", t.Candidates) : "-")} " +
+                                      $"{(t.Label != null ? $"[{t.How}: {t.Label}]" : "")}{(t.Token.InRange ? " (időszak)" : "")}{(t.Token.Repaired ? " (javított)" : "")}{(t.InText ? " (szövegben)" : "")} | {t.Token.LineText}" +
+                                      (args.Contains("--why") ? $"   ⟨{t.Context}⟩" : ""));
+        }
+        Console.WriteLine($"ÖSSZESEN {job.Documents.Count} számla: mindhárom dátum {complete}, részben {partial}, egy sem {none}, nem eldönthető {ambiguous}");
+        if (Opt("--json") is { } jsonPath)
+        {
+            // For checking the values against the page images: every found date with its box and label box.
+            var rows = job.Documents.Select(d => new
+            {
+                d.Number, d.PageRange, d.Issuer, d.InvoiceNumber, Style = d.StyleName,
+                Dates = new[] { DateKind.Issue, DateKind.Fulfillment, DateKind.Due }.Select(k =>
+                {
+                    var f = d.DateReading![k];
+                    var page = f.Token != null ? d.Pages.FirstOrDefault(p => p.Number == f.Token.PageNumber) : null;
+                    return new { Kind = k.ToString(), Value = DateReader.Format(f.Value), f.Source, f.Ambiguous, Image = page?.ImagePath, Box = f.Token?.Box, f.LabelBox };
+                }).ToList(),
+            }).ToList();
+            File.WriteAllText(jsonPath, System.Text.Json.JsonSerializer.Serialize(rows, new System.Text.Json.JsonSerializerOptions { WriteIndented = false }));
+        }
+        break;
+    }
     case "upgrade":
     {
         // upgrade --styles file --settings file: applies the built-in style upgrade (as the app does at start-up).

@@ -152,6 +152,13 @@ public sealed class InvoiceStyle : ObservableObject
     public FieldDefinition Issuer { get; set; } = new() { Mode = FieldMode.Fixed };
     public FieldDefinition InvoiceNumber { get; set; } = new() { Mode = FieldMode.Region, RemoveSpaces = true };
 
+    // Optional own rules for the dates (null = the generic date labels of the settings). The first date in the
+    // value read by the rule is used.
+    private FieldDefinition? _issueDate, _fulfillmentDate, _dueDate;
+    public FieldDefinition? IssueDate { get => _issueDate; set => SetProperty(ref _issueDate, value); }
+    public FieldDefinition? FulfillmentDate { get => _fulfillmentDate; set => SetProperty(ref _fulfillmentDate, value); }
+    public FieldDefinition? DueDate { get => _dueDate; set => SetProperty(ref _dueDate, value); }
+
     public override string ToString() => Name;
 }
 
@@ -318,6 +325,67 @@ public sealed class AppSettings
 
     /// <summary>Repair OCR damage in issuer names read from the page (accents, "Ktt" → "Kft." …).</summary>
     public bool RepairIssuerNames { get; set; } = true;
+
+    // ------------------------------------------------------------------ dates
+
+    /// <summary>Labels of the issue date (printed right before the date or as the column heading above it).</summary>
+    public List<string> IssueDateLabels { get; set; } = DefaultIssueDateLabels();
+    public List<string> FulfillmentDateLabels { get; set; } = DefaultFulfillmentDateLabels();
+    public List<string> DueDateLabels { get; set; } = DefaultDueDateLabels();
+
+    /// <summary>Labels of dates that are none of the three (periods, balances, contracts …); they win over shorter date labels.</summary>
+    public List<string> NotDateLabels { get; set; } = DefaultNotDateLabels();
+
+    /// <summary>
+    /// Payment methods of invoices that may print a single date, which is then the issue, fulfilment and due date
+    /// (as the payment method cell / start of a line, or after "Fizetés módja"). Till receipts and the handwritten
+    /// invoice pad style count anyway.
+    /// </summary>
+    public List<string> SingleDateKeywords { get; set; } = DefaultSingleDateKeywords();
+
+    /// <summary>A missing date is an error (the invoice goes to the error list); otherwise only the trust score drops.</summary>
+    public bool DatesRequired { get; set; } = true;
+
+    public static List<string> DefaultIssueDateLabels() => new()
+    {
+        "Számla kelte", "Kelte", "Kelt", "Kiállítás dátuma", "Kiállítás kelte", "Kiállítás napja", "Kiállítás", "Kiállítva",
+        "Kibocsátás dátuma", "Kibocsátás kelte", "Számla kiállításának dátuma", "Számla kiállítás dátuma", "Számlakiállítás napja",
+        "Számla kiállítás napja", "Számla kiállításának napja", "Számla dátuma", "Keltezés", "Kibocsátás napja", "Kiállítás időpontja", "Okirat kelte",
+        "Számlázás dátuma", "Bizonylat kelte", "Bizonylat dátuma", "Bizonylatdátum", "Invoice date", "Date of invoice",
+        "Date of issue", "Issue date", "Rechnungsdatum",
+    };
+
+    public static List<string> DefaultFulfillmentDateLabels() => new()
+    {
+        "Teljesítés dátuma", "Teljesítés kelte", "Teljesítés időpontja", "Teljesítés napja", "Teljesítési dátum",
+        "Teljesítési idő", "Teljesítési időpont", "Teljesítés", "Telj. kelte", "Telj. dátuma", "Telj. időpontja", "Telj. dátum",
+        "Szolgáltatás teljesítése", "Teljesítés ideje", "Áfa kibocsátásának dátuma", "Áfa teljesítés dátuma", "Tax point date", "Tax point", "Delivery date", "Date of delivery", "Date of service", "Date of supply",
+        "Date of performance", "Performance date", "Fulfilment date", "Fulfillment date", "Leistungsdatum",
+    };
+
+    public static List<string> DefaultDueDateLabels() => new()
+    {
+        "Fizetési határidő", "Fizetési határidő dátuma", "Fiz. határidő", "Fiz.határidő", "Fizetés határideje", "Fizetési határnap",
+        "Fizetési hat.", "Fiz. hat.", "Esedékesség", "Esedékesség dátuma", "Esedékes", "Határidő", "Beérkezési határidő", "Befizetési határidő", "Lejárat",
+        "Lejárat napja", "Due date", "Payment due", "Payment deadline", "Date due", "Fälligkeit", "Fällig am",
+    };
+
+    public static List<string> DefaultNotDateLabels() => new()
+    {
+        "Teljesítési időszak", "Számlázási időszak", "Számlázott időszak", "Elszámolási időszak", "Időszak", "Időszak kezdete",
+        "Időszak vége", "Tárgyidőszak", "Nyitóegyenleg", "Záróegyenleg", "Egyenleg", "Szerződés kelte", "Szerződés dátuma",
+        "Szerződés", "Szerződésszám", "Hűség", "Hűségidő", "lejár", "Lejárati dátum", "Érvényes", "Érvényesség",
+        "Rendelés dátuma", "Megrendelés dátuma", "Megrendelés", "Rendelés", "Szállítólevél dátuma", "Szállítólevél",
+        "Szállítás dátuma", "Felrak", "Lerak", "Nyomtatva", "Nyomtatás", "Leolvasás", "Leolvasás dátuma", "Mérőállás",
+        "Születési dátum", "Gyártási dátum", "Befizetve", "Fizetve", "Fizetés dátuma", "Előző számla",
+        "Használhatóságának határideje", "Hőpapír", "Elküldés tervezett dátuma", "Lejárati idő", "Lejárati ideje", "Felhasználható", "Terhelés napja", "Terhelés várható napja", "Szavatosság", "Minőségét megőrzi", "Akció", "Érvényes:",
+    };
+
+    public static List<string> DefaultSingleDateKeywords() => new()
+    {
+        "Készpénz", "Készpénzes", "Készpénzzel", "Készpénzes számla", "Készpénzfizetési számla", "Készpénzes fizetés", "Kp.", "Bankkártya", "Kártya", "Kártyás", "Nyugta",
+        "Utánvét", "Utánvétel", "Azonnal", "Azonnali",
+    };
 
     /// <summary>
     /// Correctly spelled issuer names. An issuer read from the page that is close to one of these

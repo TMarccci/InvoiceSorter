@@ -152,6 +152,15 @@
                     </ListBoxItem>
                     <ListBoxItem>
                         <DockPanel>
+                            <TextBlock Text="&#xE787;" Style="{StaticResource NavIcon}" />
+                            <StackPanel>
+                                <TextBlock Text="Dátumok" Style="{StaticResource NavTitle}" />
+                                <TextBlock Text="Kelte, teljesítés, határidő címkéi" Style="{StaticResource NavHint}" />
+                            </StackPanel>
+                        </DockPanel>
+                    </ListBoxItem>
+                    <ListBoxItem>
+                        <DockPanel>
                             <TextBlock Text="&#xE9D2;" Style="{StaticResource NavIcon}" />
                             <StackPanel>
                                 <TextBlock Text="Megbízhatóság" Style="{StaticResource NavTitle}" />
@@ -490,8 +499,64 @@
                     </Border>
                 </StackPanel>
 
-                <!-- 7: Trust score -->
+                <!-- 7: Dates -->
                 <StackPanel Visibility="{Binding SelectedIndex, ElementName=Nav, Converter={StaticResource StepVis}, ConverterParameter=7}">
+                    <TextBlock Text="Dátumok" Style="{StaticResource PageTitle}" />
+                    <TextBlock Style="{StaticResource PageIntro}"
+                               Text="A kiállítás dátuma, a teljesítés dátuma és a fizetési határidő a címkéjük alapján kerül a helyére: a dátum előtt ugyanabban a sorban, vagy felette oszlopfejlécként álló címke dönt. Ha a címkék ellentmondanak egymásnak, vagy több eltérő dátum szerepel, a mező üres marad, és a talált dátumok javaslatként jelennek meg. Soronként egy címke; a kisebb OCR-hibákat elviseli." />
+                    <Border Style="{StaticResource Section}">
+                        <StackPanel>
+                            <CheckBox IsChecked="{Binding Settings.DatesRequired}" Margin="0,0,0,4">
+                                <TextBlock TextWrapping="Wrap" Text="A hiányzó dátum hibának számít (a számla a hibás számlák közé kerül, amíg meg nem adod)" />
+                            </CheckBox>
+                            <TextBlock Style="{StaticResource Muted}" Margin="28,0,0,0" TextWrapping="Wrap"
+                                       Text="Kikapcsolva csak a megbízhatóság csökken. A nem eldönthető, érvénytelen vagy valószínűtlen dátum (pl. a határidő korábbi, mint a kiállítás) mindig hiba." />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Section}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Kiállítás dátuma" Style="{StaticResource SubTitle}" />
+                                <TextBox Text="{Binding IssueDateLabels}" AcceptsReturn="True" Height="200" VerticalScrollBarVisibility="Auto" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Teljesítés dátuma" Style="{StaticResource SubTitle}" />
+                                <TextBox Text="{Binding FulfillmentDateLabels}" AcceptsReturn="True" Height="200" VerticalScrollBarVisibility="Auto" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Text="Fizetési határidő" Style="{StaticResource SubTitle}" />
+                                <TextBox Text="{Binding DueDateLabels}" AcceptsReturn="True" Height="200" VerticalScrollBarVisibility="Auto" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource Section}">
+                        <StackPanel>
+                            <TextBlock Text="Nem számladátumok" Style="{StaticResource SubTitle}" />
+                            <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,6" TextWrapping="Wrap"
+                                       Text="Az ilyen címkéjű dátum egyik mezőbe sem kerül (időszakok, egyenleg, szerződés, hűségidő, rendelés, szállítólevél, szavatosság …). A hosszabb címke nyer: a „Teljesítési időszak” kizár, a „Teljesítés” nem." />
+                            <TextBox Text="{Binding NotDateLabels}" AcceptsReturn="True" Height="120" VerticalScrollBarVisibility="Auto" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Section}">
+                        <StackPanel>
+                            <TextBlock Text="Egydátumos számlák (fizetési mód)" Style="{StaticResource SubTitle}" />
+                            <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,6" TextWrapping="Wrap"
+                                       Text="Nyugtán, kézi számlatömbön és a helyben fizetett (készpénzes, kártyás, utánvétes) számlákon gyakran csak egy dátum szerepel: ilyenkor mindhárom dátum ez lesz. A fizetési módnak a sor elején vagy a „Fizetés módja” után kell állnia (a szövegbeli említés nem számít). Ha a lapon több eltérő dátum van, a mezők üresek maradnak." />
+                            <TextBox Text="{Binding SingleDateKeywords}" AcceptsReturn="True" Height="90" VerticalScrollBarVisibility="Auto" />
+                        </StackPanel>
+                    </Border>
+                    <Button Content="Alapértelmezett címkék visszaállítása" Click="ResetDateLabels_Click" HorizontalAlignment="Left" Margin="0,0,0,12" />
+                </StackPanel>
+
+                <!-- 8: Trust score -->
+                <StackPanel Visibility="{Binding SelectedIndex, ElementName=Nav, Converter={StaticResource StepVis}, ConverterParameter=8}">
                     <TextBlock Text="Megbízhatóság" Style="{StaticResource PageTitle}" />
                     <TextBlock Style="{StaticResource PageIntro}"
                                Text="Minden számla 0–100 pontot kap: mennyire biztos a program a kibocsátóban, a számlaszámban, a vevő adószámában és az oldalak szétbontásában (85-től magas, 60–84 közepes, 60 alatt alacsony). Az okokat az ellenőrző képernyő és a jelentés sorolja fel." />
@@ -508,8 +573,8 @@
                     </Border>
                 </StackPanel>
 
-                <!-- 8: Output -->
-                <StackPanel Visibility="{Binding SelectedIndex, ElementName=Nav, Converter={StaticResource StepVis}, ConverterParameter=8}">
+                <!-- 9: Output -->
+                <StackPanel Visibility="{Binding SelectedIndex, ElementName=Nav, Converter={StaticResource StepVis}, ConverterParameter=9}">
                     <TextBlock Text="Mentés" Style="{StaticResource PageTitle}" />
                     <TextBlock Style="{StaticResource PageIntro}" Text="Hogyan nevezze el a mentett számlákat, és hová kerüljenek a hibás számlák." />
                     <Border Style="{StaticResource Section}">

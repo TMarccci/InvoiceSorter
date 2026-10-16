@@ -12,6 +12,26 @@ public static class OverlayBuilder
     public static readonly Brush IssuerBrush = Brushes.SeaGreen;
     public static readonly Brush NumberBrush = Brushes.RoyalBlue;
     public static readonly Brush VatBrush = Brushes.DarkOrange;
+    public static readonly Brush DateBrush = Frozen(Color.FromRgb(0xC0, 0x26, 0xD3));
+
+    /// <summary>The boxes of the three dates of the invoice that are on this page (where each value was read).</summary>
+    public static IEnumerable<PageOverlay> Dates(InvoiceDocument? doc, PageInfo page)
+    {
+        if (doc?.DateReading is not { } dates) yield break;
+        var captions = new List<(NormRect Box, string Caption)>();
+        foreach (var kind in new[] { DateKind.Issue, DateKind.Fulfillment, DateKind.Due })
+        {
+            var f = dates[kind];
+            if (f.Token == null || f.Token.PageNumber != page.Number || f.Value == null) continue;
+            if (DateReader.Format(f.Value) != doc.GetDate(kind)) continue;   // changed by hand: not where it was read
+            var name = kind switch { DateKind.Issue => "kelte", DateKind.Fulfillment => "teljesítés", _ => "határidő" };
+            var same = captions.FindIndex(c => c.Box == f.Token.Box);
+            if (same >= 0) captions[same] = (f.Token.Box, captions[same].Caption + " = " + name);
+            else captions.Add((f.Token.Box, name));
+            if (f.LabelBox != null) yield return new PageOverlay(f.LabelBox, Brushes.Gray, "", 1, false);
+        }
+        foreach (var (box, caption) in captions) yield return new PageOverlay(box, DateBrush, caption);
+    }
 
     /// <param name="showLines">Also outline every recognized text line (thin, used for the live OCR preview).</param>
     public static List<PageOverlay> Build(PageInfo page, InvoiceStyle? style, AppSettings settings, bool showLines)

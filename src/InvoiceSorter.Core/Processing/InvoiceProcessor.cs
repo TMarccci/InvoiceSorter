@@ -244,11 +244,14 @@ public static class InvoiceProcessor
         AppLog.Info($"Szétválasztva {job.Documents.Count} számlára: {job.Documents.Count - errors} rendben, {errors} hibás");
         foreach (var d in job.Documents)
         {
-            var msg = $"{d.Number}. számla, oldal: {d.PageRange} | megbízhatóság {d.Trust} | sablon: {d.StyleName} | kibocsátó: '{d.Issuer}' | szám: '{d.InvoiceNumber}' | adószám: {d.Vat.Message}";
+            var msg = $"{d.Number}. számla, oldal: {d.PageRange} | megbízhatóság {d.Trust} | sablon: {d.StyleName} | kibocsátó: '{d.Issuer}' | szám: '{d.InvoiceNumber}' | " +
+                      $"kelte: {Or(d.IssueDate)}, teljesítés: {Or(d.FulfillmentDate)}, határidő: {Or(d.DueDate)} | adószám: {d.Vat.Message}";
             if (d.HasErrors) AppLog.Warn(msg + " | HIBÁK: " + d.ErrorsText);
             else AppLog.Info(msg);
         }
     }
+
+    private static string Or(string date) => string.IsNullOrEmpty(date) ? "–" : date;
 
     private static readonly System.Text.RegularExpressions.Regex PageCounter = new(@"^[\s:.;•·-]*([0-9Il|]{1,2})(?:\s*/\s*([0-9Il|]{1,2}))?(?![0-9/.:])");
 
@@ -326,9 +329,29 @@ public static class InvoiceProcessor
         doc.Vat = CheckVat(doc.Pages, settings);
         doc.VatApproved = false;
         doc.NonInvoiceTitle = FindNonInvoiceTitle(doc, settings);
+        ReadDates(doc, settings);
         Score(doc, settings);
         doc.Refresh();
     }
+
+    /// <summary>The three dates; a date the user typed is kept (re-reading after a split, merge or rotation).</summary>
+    public static void ReadDates(InvoiceDocument doc, AppSettings settings)
+    {
+        var dates = DateReader.Read(doc, settings);
+        doc.DateReading = dates;
+        doc.DatesRequired = settings.DatesRequired;
+        foreach (var kind in new[] { DateKind.Issue, DateKind.Fulfillment, DateKind.Due })
+            if (!doc.HasEdit(DateEditKey(kind))) doc.SetDate(kind, DateReader.Format(dates[kind].Value));
+        if (!doc.HasEdit("dates accepted")) doc.DatesApproved = false;
+    }
+
+    /// <summary>The manual-change key of a date ("issue date" …).</summary>
+    public static string DateEditKey(DateKind kind) => kind switch
+    {
+        DateKind.Issue => "issue date",
+        DateKind.Fulfillment => "fulfillment date",
+        _ => "due date",
+    };
 
     /// <summary>Buyer VAT check over all pages, including their high resolution readings.</summary>
     public static VatCheckResult CheckVat(IEnumerable<PageInfo> pages, AppSettings settings) =>

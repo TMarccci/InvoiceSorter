@@ -16,7 +16,7 @@ using Microsoft.Win32;
 
 namespace InvoiceSorter.App.ViewModels;
 
-public enum DrawTarget { None, Identifier, Issuer, InvoiceNumber }
+public enum DrawTarget { None, Identifier, Issuer, InvoiceNumber, IssueDate, FulfillmentDate, DueDate }
 
 /// <summary>Edits a working copy of the styles; nothing is saved until the user presses Save.</summary>
 public sealed class StyleEditorViewModel : ObservableObject, IDisposable
@@ -109,6 +109,9 @@ public sealed class StyleEditorViewModel : ObservableObject, IDisposable
         {
             if (!SetProperty(ref _selectedStyle, value)) return;
             SelectedRule = value?.IdentifierRules.FirstOrDefault();
+            OnPropertyChanged(nameof(HasIssueDateRule));
+            OnPropertyChanged(nameof(HasFulfillmentDateRule));
+            OnPropertyChanged(nameof(HasDueDateRule));
             TestAllResult = "";
             NotifyCommands();
             Recompute();
@@ -133,6 +136,9 @@ public sealed class StyleEditorViewModel : ObservableObject, IDisposable
             OnPropertyChanged(nameof(DrawIdentifier));
             OnPropertyChanged(nameof(DrawIssuer));
             OnPropertyChanged(nameof(DrawNumber));
+            OnPropertyChanged(nameof(DrawIssueDate));
+            OnPropertyChanged(nameof(DrawFulfillmentDate));
+            OnPropertyChanged(nameof(DrawDueDate));
             OnPropertyChanged(nameof(CanDraw));
             UpdateHint();
         }
@@ -142,6 +148,41 @@ public sealed class StyleEditorViewModel : ObservableObject, IDisposable
     public bool DrawIdentifier { get => DrawTarget == DrawTarget.Identifier; set { if (value) DrawTarget = DrawTarget.Identifier; } }
     public bool DrawIssuer { get => DrawTarget == DrawTarget.Issuer; set { if (value) DrawTarget = DrawTarget.Issuer; } }
     public bool DrawNumber { get => DrawTarget == DrawTarget.InvoiceNumber; set { if (value) DrawTarget = DrawTarget.InvoiceNumber; } }
+    public bool DrawIssueDate { get => DrawTarget == DrawTarget.IssueDate; set { if (value) DrawTarget = DrawTarget.IssueDate; } }
+    public bool DrawFulfillmentDate { get => DrawTarget == DrawTarget.FulfillmentDate; set { if (value) DrawTarget = DrawTarget.FulfillmentDate; } }
+    public bool DrawDueDate { get => DrawTarget == DrawTarget.DueDate; set { if (value) DrawTarget = DrawTarget.DueDate; } }
+
+    // ---- optional own date rules of the style (null: the generic date labels of the settings)
+
+    /// <summary>A new date rule: the value next to (or under) a label, the first date in it is used.</summary>
+    private static FieldDefinition NewDateRule() => new() { Mode = FieldMode.Label, LabelDirection = LabelDirection.Auto };
+
+    private FieldDefinition? GetDateRule(DateKind kind) => SelectedStyle == null ? null : DateReader.StyleField(SelectedStyle, kind);
+
+    private void SetDateRule(DateKind kind, bool on)
+    {
+        if (SelectedStyle == null || (GetDateRule(kind) != null) == on) return;
+        var rule = on ? NewDateRule() : null;
+        switch (kind)
+        {
+            case DateKind.Issue: SelectedStyle.IssueDate = rule; break;
+            case DateKind.Fulfillment: SelectedStyle.FulfillmentDate = rule; break;
+            default: SelectedStyle.DueDate = rule; break;
+        }
+        OnPropertyChanged(nameof(HasIssueDateRule));
+        OnPropertyChanged(nameof(HasFulfillmentDateRule));
+        OnPropertyChanged(nameof(HasDueDateRule));
+        Recompute();
+    }
+
+    public bool HasIssueDateRule { get => GetDateRule(DateKind.Issue) != null; set => SetDateRule(DateKind.Issue, value); }
+    public bool HasFulfillmentDateRule { get => GetDateRule(DateKind.Fulfillment) != null; set => SetDateRule(DateKind.Fulfillment, value); }
+    public bool HasDueDateRule { get => GetDateRule(DateKind.Due) != null; set => SetDateRule(DateKind.Due, value); }
+
+    private string _dateResult = "";
+
+    /// <summary>The three dates the program reads from the current page with this style (and the generic labels).</summary>
+    public string DateResult { get => _dateResult; private set => SetProperty(ref _dateResult, value); }
     public bool CanDraw => DrawTarget != DrawTarget.None && SelectedStyle != null && CurrentPage != null;
 
     public string Hint { get => _hint; private set => SetProperty(ref _hint, value); }
@@ -298,6 +339,14 @@ public sealed class StyleEditorViewModel : ObservableObject, IDisposable
             case DrawTarget.InvoiceNumber:
                 ApplyToField(SelectedStyle.InvoiceNumber, rect, oneLine, firstLine, "Számlaszám");
                 break;
+
+            case DrawTarget.IssueDate or DrawTarget.FulfillmentDate or DrawTarget.DueDate:
+            {
+                var kind = DrawTarget switch { DrawTarget.IssueDate => DateKind.Issue, DrawTarget.FulfillmentDate => DateKind.Fulfillment, _ => DateKind.Due };
+                SetDateRule(kind, true);
+                ApplyToField(GetDateRule(kind)!, rect, oneLine, firstLine, char.ToUpper(DateReader.Name(kind)[0]) + DateReader.Name(kind)[1..]);
+                break;
+            }
         }
         Recompute();
     }
@@ -335,6 +384,8 @@ public sealed class StyleEditorViewModel : ObservableObject, IDisposable
             DrawTarget.Identifier => "Rajzolj keretet egy olyan szöveg köré, amely csak az ilyen számlák ELSŐ oldalán szerepel – általában a kibocsátó neve a fejlécben.",
             DrawTarget.Issuer => "Állandó mód: a kibocsátó neve köré rajzolva átmásolja. Terület mód: rajzold meg az olvasandó területet. Címke mód: a címke köré rajzolj.",
             DrawTarget.InvoiceNumber => "Címke mód (ajánlott): rajzolj keretet a címke köré, pl. 'Számlaszám:'. Terület mód: magát a számot keretezd be.",
+            DrawTarget.IssueDate or DrawTarget.FulfillmentDate or DrawTarget.DueDate =>
+                "Csak akkor kell, ha az általános dátumcímkék ennél az elrendezésnél tévednek. Címke mód: a címke köré rajzolj (pl. 'Dátum/Teljesítés ideje'); Terület mód: a dátum köré. A rajzolás bekapcsolja a sablon saját szabályát.",
             _ => "",
         };
     }
@@ -383,7 +434,37 @@ public sealed class StyleEditorViewModel : ObservableObject, IDisposable
         }
         NumberResult = Describe(style.InvoiceNumber, page, "Számlaszám", NumberBrush, overlays);
         VatResult = InvoiceProcessor.CheckVat(new[] { page }, _settings).Message;
+        DateResult = DescribeDates(style, page, overlays);
         Overlays = overlays;
+    }
+
+    /// <summary>"kelte 2026.09.02. („Számla kelte” alatt) · teljesítés … · határidő –" for the current page.</summary>
+    private string DescribeDates(InvoiceStyle style, PageInfo page, List<PageOverlay> overlays)
+    {
+        var doc = new InvoiceDocument { Style = style };
+        doc.Pages.Add(page);
+        DateReadResult dates;
+        try { dates = DateReader.Read(doc, _settings); }
+        catch (Exception ex) { return "✖ " + ex.Message; }
+        var parts = new List<string>();
+        foreach (var kind in new[] { DateKind.Issue, DateKind.Fulfillment, DateKind.Due })
+        {
+            var f = dates[kind];
+            var name = kind switch { DateKind.Issue => "kelte", DateKind.Fulfillment => "teljesítés", _ => "határidő" };
+            parts.Add(f.Value is { } v ? $"{name} {DateReader.Format(v)} ({f.Source})" : f.Ambiguous ? $"{name} ?? (több eltérő)" : $"{name} –");
+            if (f.Token != null && f.Value != null) overlays.Add(new PageOverlay(f.Token.Box, DateBrush, name));
+            if (f.LabelBox != null && f.Value != null) overlays.Add(new PageOverlay(f.LabelBox, Brushes.Gray, name + " (címke)"));
+        }
+        return string.Join("  ·  ", parts);
+    }
+
+    private static readonly Brush DateBrush = Frozen(Color.FromRgb(0xC0, 0x26, 0xD3));
+
+    private static Brush Frozen(Color c)
+    {
+        var b = new SolidColorBrush(c);
+        b.Freeze();
+        return b;
     }
 
     private string Describe(FieldDefinition field, PageInfo page, string caption, Brush brush, List<PageOverlay> overlays)

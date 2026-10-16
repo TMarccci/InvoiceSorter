@@ -51,6 +51,7 @@ Fontosabb Core-osztályok:
 | `InvoiceProcessor` | a teljes futás (`RunAsync`), szétbontás (`BuildDocuments`), olvasás, duplikátumok, javaslatok, kibocsátónév tanulása |
 | `FieldReader` | sablon felismerése (`FindStyle`, `MatchScore`) és mezők olvasása (fix / terület / címke / regex) |
 | `PageRefiner` | a hiányos számlák újraolvasása (nagyítás, nyelv, expozíció, Surya) |
+| `DateReader` | a három dátum: dátumkeresés (formátumok, OCR-javítás, időszakok), címkék a sorban és oszlopfejlécként, döntés az olvasatok között, egydátumos szabály, ellenőrzések, javaslatok |
 | `VatValidator` | magyar adószám: formátum, ellenőrzőszám, ÁFA-kód, megyekód, OCR-hibák tűrése |
 | `TrustScorer` | 0–100 pont és indoklás |
 | `CompanyRegistry` | cégnév adószám alapján (EU VIES), gyorsítótárral |
@@ -102,6 +103,30 @@ InvoiceSorterServerManager.exe --data D:\proba\szerver --screenshots D:\kepek
 
 A felület a `ProgressInfo.Stage` konstansai alapján váltja a varázsló lépéseit – új lépésnévnél a konstansokat
 használd, ne szövegösszehasonlítást.
+
+## Dátumok (DateReader)
+
+Elv: **csak biztos értéket tölt ki.** Lépések:
+
+1. `FindDates` – OCR-soronként reguláris kifejezések: év elöl (`2026.09.02.`, `2026. 09. 02.`, `2026-09-02`), nap elöl
+   (`21.04.2026`), hónapnévvel (`2026. szeptember 2.`), pont nélküli `2026 08 28`. OCR-javítás: O/o/C→0, I/l/|→1, B→8
+   (jelölve: `Repaired`); csonka dátum (`2026.08.1`) és egybetűs komponens elvetve. Időszakok (`… - …`) `InRange`.
+2. `Label` – a dátum előtti címke ugyanabban a sorban (az előző dátumig; a címke után legfeljebb 3 szó), és a
+   felette álló oszlopfejléc (legfeljebb 3 sor, az első érték-sorig; a fejlécnek vízszintesen fednie kell a dátumot;
+   kettőspontos „címke: érték” sor nem fejléc). A címkéket a `Settings.*DateLabels` és `NotDateLabels` adja; a
+   leghosszabb, legkevesebb hibájú illeszkedés nyer (max. 2–3 karakter hiba). Ellentmondó címkék: `Conflict`.
+   Folyó szövegben álló dátum (`InText`) nem kap fejlécet.
+3. `Decide` – fajtánként: a sablon saját szabálya (`InvoiceStyle.IssueDate` …) elsőbbséget élvez; különben az első
+   oldal (amelyiken van) címkézett dátumai. Az alap olvasat dönt, az újraolvasások nem mondhatnak ellent neki; csak
+   újraolvasásból két egyező olvasat kell. Több eltérő érték → `Ambiguous` (üresen marad).
+4. Egydátumos szabály (`IsSingleDateDocument`: nyugta-sablon, kézi tömb, keskeny lap, vagy a fizetési mód sor elején /
+   a „Fizetés módja” után): egy címkézett érték → a hiányzók azonosak; címke nélkül pontosan egy (nem időszak, nem
+   szövegbeli) dátum → mindhárom.
+5. `Problems` (hibák az `InvoiceDocument.BaseErrors`-ban) és `Doubts` (pontlevonás a `TrustScorer`-ben).
+
+A dátumok a `PageRefiner.IsResolved` feltételei között is szerepelnek: hiányzó dátum újraolvasást (és Surya-t) indít.
+Pontosságméréshez: `InvoiceSorter.Cli dates <workDir> [--tokens] [--why] [--json f]` – számlánként a három dátum,
+forrás, problémák, minden talált dátum a címkéjével és a környezetével.
 
 ## Sablonok és beállítások tárolása
 

@@ -22,6 +22,7 @@ public class TrustAndSuryaTests
     {
         var s = AppSettings.CreateDefault();
         s.KnownIssuers = new() { "Alfa Kft." };
+        s.DatesRequired = false;   // the sample pages have no dates (DateReaderTests covers them)
         s.ReceiverCompanies = new() { new ReceiverCompany { Name = "Minta Vevő 1926 Kft.", VatNumber = "99991018-2-41" } };
         return s;
     }

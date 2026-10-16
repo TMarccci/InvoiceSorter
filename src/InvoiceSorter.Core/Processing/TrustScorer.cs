@@ -121,6 +121,26 @@ public static class TrustScorer
         }
         if (doc.DuplicateOf != null && doc.DuplicateAccepted) Deduct(5, "duplikált számlaszám elfogadva");
 
+        // ---- dates (a date typed by the user counts as confirmed)
+        if (!doc.DatesApproved && doc.DateReading is { } dates)
+        {
+            var seen = new HashSet<string>();
+            foreach (var kind in new[] { DateKind.Issue, DateKind.Fulfillment, DateKind.Due })
+            {
+                if (doc.HasEdit(InvoiceProcessor.DateEditKey(kind))) continue;
+                var finding = dates[kind];
+                if (finding.Value == null || DateReader.Format(finding.Value) != doc.GetDate(kind)) continue;
+                foreach (var note in finding.Notes)
+                {
+                    // The same doubt for several dates (e.g. one re-read page) counts once, more when it concerns more dates.
+                    int points = note.StartsWith("az OCR-olvasatok eltérnek") ? 8 : note.StartsWith("egydátumos") ? 2 : 5;
+                    if (seen.Add(note)) Deduct(points, note);
+                    else score -= 1;
+                }
+            }
+            foreach (var (points, reason) in DateReader.Doubts(doc)) Deduct(points, reason);
+        }
+
         // An invoice with errors is never "highly trusted", whatever was read.
         if (doc.BaseErrors.Count > 0) score = Math.Min(score, MediumThreshold - 1);
 

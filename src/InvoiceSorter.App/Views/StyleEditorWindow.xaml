@@ -174,6 +174,27 @@
                                     <ContentControl Content="{Binding InvoiceNumber}" ContentTemplate="{StaticResource FieldEditor}" />
                                 </StackPanel>
                             </Border>
+
+                            <!-- Dates (optional own rules) -->
+                            <Border BorderBrush="#C026D3" BorderThickness="3,0,0,0" Padding="10,0,0,0" Margin="0,8,0,8">
+                                <StackPanel>
+                                    <TextBlock Text="4. Dátumok (nem kötelező)" FontWeight="SemiBold" FontSize="14" />
+                                    <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap"
+                                               Text="A három dátumot a program az általános címkék alapján olvassa (Beállítások › Dátumok). Saját szabály csak akkor kell, ha ennél az elrendezésnél téved vagy nem találja – pl. egy 'Dátum/Teljesítés ideje' címke, vagy egy '…-ig levonás nélkül' határidő. A szabály által olvasott szöveg első dátuma számít." />
+                                    <CheckBox IsChecked="{Binding DataContext.HasIssueDateRule, RelativeSource={RelativeSource AncestorType=Window}}" Margin="0,6,0,0"
+                                              Content="Saját szabály: kiállítás dátuma" />
+                                    <ContentControl Content="{Binding IssueDate}" ContentTemplate="{StaticResource FieldEditor}" Margin="20,0,0,0"
+                                                    Visibility="{Binding IssueDate, Converter={StaticResource NullToVis}}" />
+                                    <CheckBox IsChecked="{Binding DataContext.HasFulfillmentDateRule, RelativeSource={RelativeSource AncestorType=Window}}" Margin="0,6,0,0"
+                                              Content="Saját szabály: teljesítés dátuma" />
+                                    <ContentControl Content="{Binding FulfillmentDate}" ContentTemplate="{StaticResource FieldEditor}" Margin="20,0,0,0"
+                                                    Visibility="{Binding FulfillmentDate, Converter={StaticResource NullToVis}}" />
+                                    <CheckBox IsChecked="{Binding DataContext.HasDueDateRule, RelativeSource={RelativeSource AncestorType=Window}}" Margin="0,6,0,0"
+                                              Content="Saját szabály: fizetési határidő" />
+                                    <ContentControl Content="{Binding DueDate}" ContentTemplate="{StaticResource FieldEditor}" Margin="20,0,0,0"
+                                                    Visibility="{Binding DueDate, Converter={StaticResource NullToVis}}" />
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
@@ -201,12 +222,18 @@
                     <!-- Draw target -->
                     <Border DockPanel.Dock="Top" Background="#F8FAFC" CornerRadius="6" Padding="10,6" Margin="0,0,0,8">
                         <StackPanel>
-                            <StackPanel Orientation="Horizontal">
+                            <WrapPanel>
                                 <TextBlock Text="Keret rajzolása az oldalon:" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,12,0" />
                                 <RadioButton Content="Azonosító szöveg" IsChecked="{Binding DrawIdentifier}" Foreground="MediumPurple" Margin="0,0,14,0" GroupName="draw" />
                                 <RadioButton Content="Kibocsátó" IsChecked="{Binding DrawIssuer}" Foreground="SeaGreen" Margin="0,0,14,0" GroupName="draw" />
-                                <RadioButton Content="Számlaszám" IsChecked="{Binding DrawNumber}" Foreground="RoyalBlue" GroupName="draw" />
-                            </StackPanel>
+                                <RadioButton Content="Számlaszám" IsChecked="{Binding DrawNumber}" Foreground="RoyalBlue" Margin="0,0,14,0" GroupName="draw" />
+                                <RadioButton Content="Kelte" IsChecked="{Binding DrawIssueDate}" Foreground="#C026D3" Margin="0,0,10,0" GroupName="draw"
+                                             ToolTip="A kiállítás dátuma (a sablon saját szabálya)" />
+                                <RadioButton Content="Teljesítés" IsChecked="{Binding DrawFulfillmentDate}" Foreground="#C026D3" Margin="0,0,10,0" GroupName="draw"
+                                             ToolTip="A teljesítés dátuma (a sablon saját szabálya)" />
+                                <RadioButton Content="Határidő" IsChecked="{Binding DrawDueDate}" Foreground="#C026D3" GroupName="draw"
+                                             ToolTip="A fizetési határidő (a sablon saját szabálya)" />
+                            </WrapPanel>
                             <TextBlock Text="{Binding Hint}" Style="{StaticResource Muted}" Margin="0,4,0,0" />
                         </StackPanel>
                     </Border>
@@ -219,6 +246,7 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
@@ -244,7 +272,9 @@
                             <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding NumberResult}" FontFamily="Consolas" TextWrapping="Wrap" />
                             <TextBlock Grid.Row="3" Text="Vevő adószáma" Style="{StaticResource FieldLabel}" />
                             <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding VatResult}" TextWrapping="Wrap" />
-                            <DockPanel Grid.Row="4" Grid.ColumnSpan="2" Margin="0,6,0,0">
+                            <TextBlock Grid.Row="4" Text="Dátumok" Style="{StaticResource FieldLabel}" Foreground="#C026D3" />
+                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding DateResult}" TextWrapping="Wrap" />
+                            <DockPanel Grid.Row="5" Grid.ColumnSpan="2" Margin="0,6,0,0">
                                 <Button DockPanel.Dock="Left" Content="Próba az összes oldalon" Command="{Binding TestAllCommand}" VerticalAlignment="Top" Margin="0,0,10,0" />
                                 <TextBlock Text="{Binding TestAllResult}" TextWrapping="Wrap" VerticalAlignment="Center" />
                             </DockPanel>

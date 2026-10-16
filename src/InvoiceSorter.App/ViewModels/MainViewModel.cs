@@ -427,18 +427,29 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>Other issuer names: by the supplier tax number (known / company register) and from the readings.</summary>
     public IReadOnlyList<InvoiceProcessor.ValueSuggestion> IssuerSuggestions { get => _issuerSuggestions; private set => SetProperty(ref _issuerSuggestions, value); }
 
+    private IReadOnlyList<InvoiceProcessor.ValueSuggestion> _issueDateSuggestions = Array.Empty<InvoiceProcessor.ValueSuggestion>();
+    private IReadOnlyList<InvoiceProcessor.ValueSuggestion> _fulfillmentDateSuggestions = Array.Empty<InvoiceProcessor.ValueSuggestion>();
+    private IReadOnlyList<InvoiceProcessor.ValueSuggestion> _dueDateSuggestions = Array.Empty<InvoiceProcessor.ValueSuggestion>();
+
+    /// <summary>The other dates printed on the invoice (labelled as this kind first), one click takes one over.</summary>
+    public IReadOnlyList<InvoiceProcessor.ValueSuggestion> IssueDateSuggestions { get => _issueDateSuggestions; private set => SetProperty(ref _issueDateSuggestions, value); }
+    public IReadOnlyList<InvoiceProcessor.ValueSuggestion> FulfillmentDateSuggestions { get => _fulfillmentDateSuggestions; private set => SetProperty(ref _fulfillmentDateSuggestions, value); }
+    public IReadOnlyList<InvoiceProcessor.ValueSuggestion> DueDateSuggestions { get => _dueDateSuggestions; private set => SetProperty(ref _dueDateSuggestions, value); }
+
     private void UpdateSuggestions()
     {
         var doc = SelectedDocument;
         if (doc == null || Job == null)
         {
             NumberSuggestions = IssuerSuggestions = Array.Empty<InvoiceProcessor.ValueSuggestion>();
+            IssueDateSuggestions = FulfillmentDateSuggestions = DueDateSuggestions = Array.Empty<InvoiceProcessor.ValueSuggestion>();
             return;
         }
         try
         {
             NumberSuggestions = InvoiceProcessor.InvoiceNumberSuggestions(doc, Styles.ToList(), JobSettings);
             IssuerSuggestions = InvoiceProcessor.IssuerSuggestions(doc, Styles.ToList(), JobSettings);
+            UpdateDateSuggestions(doc);
         }
         catch (Exception ex)
         {
@@ -452,6 +463,21 @@ public sealed class MainViewModel : ObservableObject
         if (SelectedDocument == null) return;
         SelectedDocument.Issuer = value;
         UpdateSuggestions();
+    }
+
+    private void UpdateDateSuggestions(InvoiceDocument doc)
+    {
+        IssueDateSuggestions = DateReader.Suggestions(doc, DateKind.Issue);
+        FulfillmentDateSuggestions = DateReader.Suggestions(doc, DateKind.Fulfillment);
+        DueDateSuggestions = DateReader.Suggestions(doc, DateKind.Due);
+    }
+
+    /// <summary>Takes over a suggested date (counts as a manual edit).</summary>
+    public void ApplyDateSuggestion(DateKind kind, string value)
+    {
+        if (SelectedDocument == null) return;
+        SelectedDocument.SetDate(kind, value);
+        UpdateDateSuggestions(SelectedDocument);
     }
 
     /// <summary>Takes over a suggested invoice number (counts as a manual edit).</summary>
@@ -1016,13 +1042,25 @@ public sealed class MainViewModel : ObservableObject
                 nameof(InvoiceDocument.Excluded) => "excluded",
                 nameof(InvoiceDocument.DuplicateAccepted) => "duplicate kept",
                 nameof(InvoiceDocument.IsInvoiceConfirmed) => "confirmed as invoice",
+                nameof(InvoiceDocument.IssueDate) => "issue date",
+                nameof(InvoiceDocument.FulfillmentDate) => "fulfillment date",
+                nameof(InvoiceDocument.DueDate) => "due date",
+                nameof(InvoiceDocument.DatesApproved) => "dates accepted",
                 _ => null,
             };
             if (what != null) doc.MarkEdited(what);
         }
+        if (e.PropertyName is nameof(InvoiceDocument.IssueDate) or nameof(InvoiceDocument.FulfillmentDate) or nameof(InvoiceDocument.DueDate)
+            && sender is InvoiceDocument dated)
+        {
+            UpdateDateSuggestions(dated);
+            UpdateOverlays();
+        }
 
         if (e.PropertyName is nameof(InvoiceDocument.Issuer) or nameof(InvoiceDocument.InvoiceNumber) or nameof(InvoiceDocument.VatApproved)
-            or nameof(InvoiceDocument.Excluded) or nameof(InvoiceDocument.DuplicateAccepted) or nameof(InvoiceDocument.IsInvoiceConfirmed))
+            or nameof(InvoiceDocument.Excluded) or nameof(InvoiceDocument.DuplicateAccepted) or nameof(InvoiceDocument.IsInvoiceConfirmed)
+            or nameof(InvoiceDocument.IssueDate) or nameof(InvoiceDocument.FulfillmentDate) or nameof(InvoiceDocument.DueDate)
+            or nameof(InvoiceDocument.DatesApproved))
         {
             OnPropertyChanged(nameof(ProposedFileName));
             // Duplicate check and trust score only after a short pause in typing (they re-read the page text).
@@ -1102,7 +1140,8 @@ public sealed class MainViewModel : ObservableObject
     {
         PageOverlays = SelectedPage == null
             ? Array.Empty<PageOverlay>()
-            : OverlayBuilder.Build(SelectedPage, SelectedDocument?.Style, JobSettings, showLines: false);
+            : OverlayBuilder.Build(SelectedPage, SelectedDocument?.Style, JobSettings, showLines: false)
+                .Concat(OverlayBuilder.Dates(SelectedDocument, SelectedPage)).ToList();
     }
 
     // ---------------------------------------------------------------- step 5: save

@@ -132,6 +132,81 @@ public sealed class InvoiceDocument : ObservableObject
         set { if (SetProperty(ref _vat, value)) Refresh(); }
     }
 
+    // ------------------------------------------------------------------ dates
+
+    private string _issueDate = "", _fulfillmentDate = "", _dueDate = "";
+    private bool _datesApproved;
+
+    /// <summary>Kiállítás dátuma (számla kelte), "2026.09.02." – typed text is normalized when it is a valid date.</summary>
+    public string IssueDate
+    {
+        get => _issueDate;
+        set { if (SetProperty(ref _issueDate, DateReader.Normalize(value))) RefreshDates(); }
+    }
+
+    /// <summary>Teljesítés dátuma.</summary>
+    public string FulfillmentDate
+    {
+        get => _fulfillmentDate;
+        set { if (SetProperty(ref _fulfillmentDate, DateReader.Normalize(value))) RefreshDates(); }
+    }
+
+    /// <summary>Fizetési határidő.</summary>
+    public string DueDate
+    {
+        get => _dueDate;
+        set { if (SetProperty(ref _dueDate, DateReader.Normalize(value))) RefreshDates(); }
+    }
+
+    public string GetDate(DateKind kind) => kind switch { DateKind.Issue => IssueDate, DateKind.Fulfillment => FulfillmentDate, _ => DueDate };
+
+    public void SetDate(DateKind kind, string value)
+    {
+        switch (kind)
+        {
+            case DateKind.Issue: IssueDate = value; break;
+            case DateKind.Fulfillment: FulfillmentDate = value; break;
+            default: DueDate = value; break;
+        }
+    }
+
+    /// <summary>What the date reader found (sources, boxes, the dates of the invoice for the suggestions).</summary>
+    public DateReadResult? DateReading { get; set; }
+
+    /// <summary>The user checked the dates and accepted them as they are (also an unusual order or an empty one).</summary>
+    public bool DatesApproved
+    {
+        get => _datesApproved;
+        set { if (SetProperty(ref _datesApproved, value)) RefreshDates(); }
+    }
+
+    /// <summary>Setting "a missing date is an error".</summary>
+    public bool DatesRequired { get; set; } = true;
+
+    /// <summary>Where a date comes from: the source of the reading, or "kézzel" after a manual change.</summary>
+    public string DateSource(DateKind kind)
+    {
+        var key = kind switch { DateKind.Issue => "issue date", DateKind.Fulfillment => "fulfillment date", _ => "due date" };
+        if (HasEdit(key)) return "kézzel megadva";
+        var f = DateReading?[kind];
+        if (f == null) return "";
+        if (f.Value != null && DateReader.Format(f.Value) == GetDate(kind)) return f.Source;
+        if (string.IsNullOrEmpty(GetDate(kind))) return f.Ambiguous ? "több eltérő dátum – válassz a javaslatok közül" : "nem található";
+        return "";
+    }
+
+    public string IssueDateSource => DateSource(DateKind.Issue);
+    public string FulfillmentDateSource => DateSource(DateKind.Fulfillment);
+    public string DueDateSource => DateSource(DateKind.Due);
+
+    private void RefreshDates()
+    {
+        OnPropertyChanged(nameof(IssueDateSource));
+        OnPropertyChanged(nameof(FulfillmentDateSource));
+        OnPropertyChanged(nameof(DueDateSource));
+        Refresh();
+    }
+
     /// <summary>The user checked the VAT number by eye and accepted the invoice.</summary>
     public bool VatApproved
     {
@@ -176,7 +251,8 @@ public sealed class InvoiceDocument : ObservableObject
         ["issuer"] = "kibocsátó", ["invoice number"] = "számlaszám", ["VAT accepted"] = "adószám elfogadva",
         ["excluded"] = "kizárva", ["duplicate kept"] = "duplikátum megtartva", ["confirmed as invoice"] = "számlának jelölve",
         ["split"] = "szétvágva", ["merged"] = "összevonva", ["style"] = "sablon", ["page order"] = "oldalsorrend",
-        ["page rotated"] = "oldal elforgatva",
+        ["page rotated"] = "oldal elforgatva", ["issue date"] = "kiállítás dátuma", ["fulfillment date"] = "teljesítés dátuma",
+        ["due date"] = "fizetési határidő", ["dates accepted"] = "dátumok elfogadva",
     };
 
     public bool IsManuallyEdited => _edits.Count > 0;
@@ -272,6 +348,7 @@ public sealed class InvoiceDocument : ObservableObject
             if (DuplicateOf is int d && !DuplicateAccepted) errors.Add($"Duplikátum: ugyanaz a kibocsátó és számlaszám, mint a(z) {d}. számlán");
             if (NonInvoiceTitle is { } title && !IsInvoiceConfirmed)
                 errors.Add($"Nem számla? Az oldal címe: „{title}” – valószínűleg egy számlához tartozik (Összevonás az előzővel / Összevonás…), vagy kizárható");
+            errors.AddRange(DateReader.Problems(this));
             return errors;
         }
     }

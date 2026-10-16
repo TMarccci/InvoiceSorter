@@ -6,6 +6,7 @@ Ez az útmutató a kliensprogram használatát írja le. A szerver telepítésé
 - [Telepítés és frissítés](#telepítés-és-frissítés)
 - [A feldolgozás lépései](#a-feldolgozás-lépései)
 - [Hibák ellenőrzése és javítása](#hibák-ellenőrzése-és-javítása)
+- [Dátumok](#dátumok)
 - [Mentés](#mentés)
 - [Sablonok](#sablonok)
 - [Beállítások](#beállítások)
@@ -76,6 +77,8 @@ Lehetséges hibák:
 | *Duplikátum* | ugyanaz a lap kétszer: **Kizárás**; ha tényleg két számla: **Duplikátum megtartása** |
 | *Nem számla? Az oldal címe: „Szállítólevél”* | **Összevonás az előzővel** / **Összevonás…**, **Kizárás**, vagy **Ez számla** |
 | *Alacsony megbízhatóság* | ellenőrizd a kibocsátót és a számlaszámot (csak ha a Beállításokban hibának számít) |
+| *Hiányzó dátum* / *Nem dönthető el egyértelműen* | írd be a dátumot, vagy kattints egy javaslatra a mező alatt – lásd [Dátumok](#dátumok) |
+| *A fizetési határidő korábbi, mint a kiállítás dátuma* / *Valószínűtlen dátum* | nézd meg az oldalt; ha így helyes: **Dátumok elfogadva** |
 
 ### Javaslatok
 
@@ -96,12 +99,45 @@ név). Egy kattintással átveheted őket; a forrás az egérmutató alatt láts
 | | **Új sablon…** | sablon készítése a kijelölt oldalból |
 | Mentés | **Kizárás** | a számla nem kerül mentésre |
 | | **Adószám elfogadva** | elfogadod, bár a vevő adószámát nem sikerült igazolni |
+| | **Dátumok elfogadva** | a dátumok így helyesek (szokatlan sorrend, régi dátum, vagy a számlán nem szereplő dátum is) |
 | | **Duplikátum megtartása** | mindkét azonos számlát menti (a második `_2` végződést kap) |
 | | **Ez számla** | a „nem számla” jelzés visszavonása |
 
 A kézzel módosított számlák sárga sorral és ✎ jellel látszanak, és a jelentésben is szerepelnek. Az
 **Újrafelismerés** a teljes fájlt újra szétbontja a jelenlegi sablonokkal (a meglévő OCR-ből; a kézi módosítások
 elvesznek). Ha a vevő cég nem szerepel a beállításaid között, a program felajánlja a felvételét.
+
+## Dátumok
+
+Minden számlánál három dátum szerepel a számlaszám alatt: **kiállítás dátuma** (számla kelte), **teljesítés
+dátuma** és **fizetési határidő**. Begépelhető mezők (nem naptár): `2026.09.02.`, `2026-09-02`, `20260902`,
+`02.09.2026` is jó, a program `2026.09.02.` alakra hozza (Enter vagy a mező elhagyása rögzíti). A mező alatt kis
+betűvel látszik, honnan vette a program („„Számla kelte” alatt”, „„Fizetési határidő” mellett”, „egyetlen dátum
+(pénztárgépes nyugta)”, „kézzel megadva”), a lapon pedig lila keret jelöli a helyét.
+
+**Hogyan dönt a program?**
+
+- Egy dátum csak a **címkéje** alapján kerül a helyére: a vele egy sorban, közvetlenül előtte álló címke
+  („Kiállítás dátuma: 2026.09.02.”) vagy a felette álló oszlopfejléc (a szokásos „Teljesítés dátuma | Számla kelte |
+  Fizetési határidő” táblázat). Kétnyelvű („Számla kelte / Invoice date”) és két sorra tört címkéket is felismer.
+- Az **időszakok** („Teljesítési időszak: 2026.08.01 – 2026.08.31”), egyenlegek, szerződés-, hűségidő-, rendelés-,
+  szállítólevél- és szavatossági dátumok nem kerülnek a mezőkbe.
+- **Nyugta, kézi számlatömb, készpénzes / kártyás / utánvétes fizetés:** ha a lapon csak egy dátum van, az mindhárom.
+  Ha egy dátum van megcímkézve (pl. „Kelt”), a hiányzók azonosak vele.
+- **Ha nem biztos, üresen hagyja** – és szól: ha két eltérő dátum ugyanazzal a címkével szerepel (pl. gyűjtőszámla
+  tételenkénti teljesítéssel), ha a címkék ellentmondanak egymásnak, ha az OCR-olvasatok eltérnek, vagy ha a dátum csak
+  egyetlen újraolvasásban látszik. Ilyenkor a mező alatti **javaslatok** a lapon talált dátumokat mutatják (elöl az
+  adott címkéjűek, az egérmutató alatt a lapon mellettük álló szöveggel); egy kattintás átveszi. Ha a számlán
+  fizetési feltétel áll („Átutalás (8 nap)”), a kiszámolt határidő („kiállítás + 8 nap”) is javaslatként jelenik meg.
+- **Ellenőrzések:** hiba, ha a határidő a kiállítás előtt van, ha a kiállítás a jövőben van, ha egy dátum két évnél
+  régebbi vagy egy évnél későbbi, vagy ha a dátumok között több mint egy év van (tipikus OCR-hiba: halvány „2026”
+  helyett „2020”). Kisebb levonás jár a szokatlanul hosszú fizetési határidőért, a kiírt fizetési feltételnek
+  ellentmondó határidőért, és az OCR-javított vagy csak újraolvasásból ismert dátumért.
+
+A hiányzó dátum alapértelmezés szerint hiba (a számla a hibás számlák közé kerül, amíg meg nem adod); ez a
+*Beállítások › Dátumok* oldalon kikapcsolható. Ugyanott bővítheted a címkéket, ha egy szállító másként írja őket. Ha
+egy elrendezésnél az általános címkék tévednek, a sablonban saját dátumszabályt adhatsz meg (lásd
+[Sablonok](#sablonok)).
 
 ## Mentés
 
@@ -110,7 +146,9 @@ Válaszd ki a célmappát, majd **Számlák mentése**.
 - A hibátlan számlák neve: `{Számlaszám}_{Kibocsátó}.pdf` (a minta a Beállításokban módosítható).
 - A még hibás számlák a `_Errors` almappába kerülnek (kikapcsolható).
 - Meglévő fájlt soha nem ír felül, hanem sorszámot fűz a névhez.
-- A számlák mellé CSV-jelentés (`_report_*.csv`) és a feldolgozás naplója (`_log_*.txt`) is kerül.
+- A számlák mellé CSV-jelentés (`_report_*.csv`) és a feldolgozás naplója (`_log_*.txt`) is kerül. A jelentésben a
+  számlaszám után a három dátum (`Kiállítás dátuma`, `Teljesítés dátuma`, `Fizetési határidő`, `2026.09.02.` alakban),
+  a végén pedig a forrásuk is szerepel. A fájlnévbe a dátumok nem kerülnek.
 - A kézzel javított kibocsátóneveket a program megjegyzi (központi módban a szerveren), így legközelebb automatikusan
   javítja.
 
@@ -124,6 +162,7 @@ számlaszám. Megnyitás: **Sablonok…** a fejlécben, vagy **Új sablon…** a
 | **1. Az első oldal felismerése** | szövegek, amelyeknek mind szerepelniük kell az oldalon; egy szöveg területre is korlátozható |
 | **2. Kibocsátó** | *Állandó szöveg* (egy szállítóhoz tartozó sablon) vagy az oldalról olvasva |
 | **3. Számlaszám** | általában *Címke mellett*: megkeresi a címkét (pl. `Számlaszám`) és a mellette/alatta álló értéket olvassa |
+| **4. Dátumok** (nem kötelező) | saját szabály a kiállítás / teljesítés dátumához vagy a határidőhöz, ha az általános címkék ennél az elrendezésnél tévednek (pl. „Dátum/Teljesítés ideje”); a szabály által olvasott szöveg első dátuma számít. Rajzolható is (*Kelte / Teljesítés / Határidő*) |
 
 Használat: válassz oldalt (a jelenlegi fájlból vagy *Minta PDF megnyitása…*), jelöld ki, mit rajzolsz
 (*Azonosító szöveg / Kibocsátó / Számlaszám*), és húzz keretet az oldalon. Az eredmény azonnal látszik alul; a
@@ -160,6 +199,7 @@ A **Beállítások…** ablak oldalai:
 | **Windows OCR** | nyelv, felbontás, hibatűrés |
 | **Surya OCR** | mikor és hol fusson a Surya |
 | **Kibocsátók** | névjavítás, cégnév lekérdezése adószám alapján, ismert kibocsátók listája |
+| **Dátumok** | a kiállítás / teljesítés / határidő címkéi, a kizárt („nem számladátum”) címkék, az egydátumos fizetési módok; hiba-e a hiányzó dátum |
 | **Megbízhatóság** | az alacsony pontszám küszöbe; számítson-e hibának |
 | **Mentés** | fájlnévminta (`{InvoiceNumber}`, `{Issuer}`, `{Style}`, `{Number}`), hibás számlák almappája |
 

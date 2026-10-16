@@ -63,7 +63,7 @@ public partial class SettingsWindow : Window
     /// <summary>Number of pages in the menu on the left.</summary>
     public int PageCount => Nav.Items.Count;
 
-    /// <summary>Shows one of the pages (0 = configuration, 1 = receiving companies … 8 = output).</summary>
+    /// <summary>Shows one of the pages (0 = configuration, 1 = receiving companies … 7 = dates … 9 = output).</summary>
     public void ShowPage(int index) => Nav.SelectedIndex = Math.Clamp(index, 0, Nav.Items.Count - 1);
 
     private void Nav_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -164,6 +164,8 @@ public partial class SettingsWindow : Window
         }
     }
 
+    private void ResetDateLabels_Click(object sender, RoutedEventArgs e) => _vm.ResetDateLabels();
+
     private void SuryaApiKey_Changed(object sender, RoutedEventArgs e) => _vm.Settings.SuryaApiKey = SuryaApiKeyBox.Password;
 
     private async void TestSurya_Click(object sender, RoutedEventArgs e)
@@ -205,6 +207,11 @@ public sealed class SettingsViewModel : ObservableObject
         ContinuationTitles = string.Join(Environment.NewLine, settings.ContinuationTitles);
         NonInvoiceKeywords = string.Join(Environment.NewLine, settings.NonInvoiceKeywords);
         KnownIssuers = string.Join(Environment.NewLine, settings.KnownIssuers);
+        IssueDateLabels = string.Join(Environment.NewLine, settings.IssueDateLabels);
+        FulfillmentDateLabels = string.Join(Environment.NewLine, settings.FulfillmentDateLabels);
+        DueDateLabels = string.Join(Environment.NewLine, settings.DueDateLabels);
+        NotDateLabels = string.Join(Environment.NewLine, settings.NotDateLabels);
+        SingleDateKeywords = string.Join(Environment.NewLine, settings.SingleDateKeywords);
         OcrLanguages = new[] { "" }.Concat(PageAnalyzer.AvailableOcrLanguages()).ToList();
     }
 
@@ -303,6 +310,22 @@ public sealed class SettingsViewModel : ObservableObject
     public string NonInvoiceKeywords { get; set; }
     public string KnownIssuers { get; set; }
 
+    private string _issueDateLabels = "", _fulfillmentDateLabels = "", _dueDateLabels = "", _notDateLabels = "", _singleDateKeywords = "";
+    public string IssueDateLabels { get => _issueDateLabels; set => SetProperty(ref _issueDateLabels, value); }
+    public string FulfillmentDateLabels { get => _fulfillmentDateLabels; set => SetProperty(ref _fulfillmentDateLabels, value); }
+    public string DueDateLabels { get => _dueDateLabels; set => SetProperty(ref _dueDateLabels, value); }
+    public string NotDateLabels { get => _notDateLabels; set => SetProperty(ref _notDateLabels, value); }
+    public string SingleDateKeywords { get => _singleDateKeywords; set => SetProperty(ref _singleDateKeywords, value); }
+
+    public void ResetDateLabels()
+    {
+        IssueDateLabels = string.Join(Environment.NewLine, AppSettings.DefaultIssueDateLabels());
+        FulfillmentDateLabels = string.Join(Environment.NewLine, AppSettings.DefaultFulfillmentDateLabels());
+        DueDateLabels = string.Join(Environment.NewLine, AppSettings.DefaultDueDateLabels());
+        NotDateLabels = string.Join(Environment.NewLine, AppSettings.DefaultNotDateLabels());
+        SingleDateKeywords = string.Join(Environment.NewLine, AppSettings.DefaultSingleDateKeywords());
+    }
+
     public string BlankThresholdPercent
     {
         get => (Settings.BlankInkThreshold * 100).ToString("0.###", CultureInfo.CurrentCulture);
@@ -323,6 +346,11 @@ public sealed class SettingsViewModel : ObservableObject
         Settings.ContinuationTitles = Lines(ContinuationTitles);
         Settings.NonInvoiceKeywords = Lines(NonInvoiceKeywords);
         Settings.KnownIssuers = Lines(KnownIssuers).Distinct().OrderBy(s => s, StringComparer.CurrentCultureIgnoreCase).ToList();
+        Settings.IssueDateLabels = Lines(IssueDateLabels).Distinct().ToList();
+        Settings.FulfillmentDateLabels = Lines(FulfillmentDateLabels).Distinct().ToList();
+        Settings.DueDateLabels = Lines(DueDateLabels).Distinct().ToList();
+        Settings.NotDateLabels = Lines(NotDateLabels).Distinct().ToList();
+        Settings.SingleDateKeywords = Lines(SingleDateKeywords).Distinct().ToList();
         Settings.FuzzyTolerance = Math.Clamp(Settings.FuzzyTolerance, 0, 0.4);
         Settings.RenderDpi = Math.Clamp(Settings.RenderDpi, 100, 400);
         return Settings;

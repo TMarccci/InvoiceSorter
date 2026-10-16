@@ -38,7 +38,8 @@ public static class PdfExporter
         var files = new List<string>();
         int saved = 0, savedErrors = 0, skipped = 0, excluded = 0;
         var report = new StringBuilder();
-        report.AppendLine("Számla;Oldalak;Állapot;Megbízhatóság;Sablon;Kibocsátó;Számlaszám;Vevő adószáma;Fájl;Hibák;Kézi módosítás;Levonások");
+        report.AppendLine("Számla;Oldalak;Állapot;Megbízhatóság;Sablon;Kibocsátó;Számlaszám;Kiállítás dátuma;Teljesítés dátuma;Fizetési határidő;" +
+                          "Vevő adószáma;Fájl;Hibák;Kézi módosítás;Levonások;Dátumok forrása");
 
         AppLog.Info($"{job.Documents.Count} számla mentése ide: {outputDir}");
         using var source = PdfReader.Open(job.SourcePath, PdfDocumentOpenMode.Import);
@@ -87,7 +88,9 @@ public static class PdfExporter
             report.AppendLine(string.Join(";", new[]
             {
                 doc.Number.ToString(), doc.PageRange, doc.StatusText, doc.Trust.ToString(), doc.StyleName, doc.Issuer, doc.InvoiceNumber,
+                doc.IssueDate, doc.FulfillmentDate, doc.DueDate,
                 doc.VatText, target == null ? "" : Path.GetRelativePath(outputDir, target), doc.ErrorsText, doc.EditsText, doc.TrustReasonsText,
+                $"kelte: {doc.IssueDateSource}; teljesítés: {doc.FulfillmentDateSource}; határidő: {doc.DueDateSource}",
             }.Select(Csv)));
         }
 

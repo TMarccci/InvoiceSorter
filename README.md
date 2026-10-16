@@ -29,6 +29,8 @@ MI-alapú OCR is használható. Internet, MI-szolgáltatás vagy kredit nem kell
 
 - **Automatikus szétbontás** – a sablonok, a számlacímek és a vevő cég alapján; üres hátoldalak elhagyása, elforgatott
   oldalak kiegyenesítése, többoldalas számlák összevonása.
+- **Dátumok** – kiállítás, teljesítés, fizetési határidő a címkéjük alapján; ahol nem egyértelmű, üresen marad, és a
+  lapon talált dátumokat kínálja fel; nyugtán és készpénzes számlán az egyetlen dátum mindhárom.
 - **Adatkiolvasás sablonokkal** – a gyakori magyar számlázóprogramokhoz (Számlázz.hu, Billingo, NAV Online Számlázó,
   pénztárgépes nyugták …) beépített sablonok; saját sablon pár kattintással, a lapon rajzolva.
 - **Ellenőrzés** – vevő adószáma (ellenőrzőszámmal), duplikátumok, „nem számla” oldalak, 0–100 pontos megbízhatóság.

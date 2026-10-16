@@ -235,6 +235,7 @@
                             <Border BorderBrush="SeaGreen" /><TextBlock Text="kibocsátó" />
                             <Border BorderBrush="RoyalBlue" /><TextBlock Text="számlaszám" />
                             <Border BorderBrush="DarkOrange" /><TextBlock Text="vevő adószáma" />
+                            <Border BorderBrush="#C026D3" /><TextBlock Text="dátum" />
                             <Border BorderBrush="Gray" /><TextBlock Text="címke" />
                             <Border BorderBrush="Red" /><TextBlock Text="nem olvasható" />
                         </WrapPanel>
@@ -421,6 +422,7 @@
                                 <DataGridTextColumn Header="Sablon" Binding="{Binding StyleName}" Width="120" />
                                 <DataGridTextColumn Header="Kibocsátó" Binding="{Binding Issuer}" Width="160" />
                                 <DataGridTextColumn Header="Számlaszám" Binding="{Binding InvoiceNumber}" Width="130" />
+                                <DataGridTextColumn Header="Kelte" Binding="{Binding IssueDate}" Width="88" />
                                 <DataGridTextColumn Header="Vevő adószáma" Binding="{Binding VatText}" Width="130" />
                                 <DataGridTemplateColumn Header="Pont" Width="70" SortMemberPath="Trust">
                                     <DataGridTemplateColumn.CellTemplate>
@@ -515,6 +517,7 @@
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
 
                                     <TextBlock Text="Sablon" Style="{StaticResource FieldLabel}" />
@@ -565,15 +568,84 @@
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
 
-                                    <TextBlock Grid.Row="5" Text="Vevő adószáma" Style="{StaticResource FieldLabel}" />
-                                    <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Vat.Message}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,0,6" />
+                                    <!-- The three dates: typed (not a calendar), with where they were read and the other dates of the invoice -->
+                                    <TextBlock Grid.Row="5" Text="Dátumok" Style="{StaticResource FieldLabel}" VerticalAlignment="Top" Margin="0,2,12,0" />
+                                    <Grid Grid.Row="5" Grid.Column="1" Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="0" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="0" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                            <TextBlock Text="Kiállítás dátuma" FontSize="11" Foreground="{StaticResource MutedText}" Margin="1,0,0,1" />
+                                            <TextBox Text="{Binding IssueDate, UpdateSourceTrigger=LostFocus}" KeyDown="DateBox_KeyDown" FontFamily="Consolas"
+                                                     ToolTip="A számla kelte (kiállítás dátuma). Begépelhető: 2026.09.02., 2026-09-02, 20260902, 02.09.2026 … (Enter: rögzítés)" />
+                                            <TextBlock Text="{Binding IssueDateSource}" FontSize="10.5" Foreground="{StaticResource MutedText}" TextWrapping="Wrap" Margin="1,1,0,2" />
+                                            <ItemsControl ItemsSource="{Binding DataContext.IssueDateSuggestions, RelativeSource={RelativeSource AncestorType=Window}}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Button Style="{StaticResource SuggestionChip}" Content="{Binding Value}" Tag="issue" Click="DateSuggestion_Click"
+                                                                ToolTip="{Binding Source, StringFormat='A lapon: {0} – kattints az átvételhez'}" />
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Margin="0,0,8,0">
+                                            <TextBlock Text="Teljesítés dátuma" FontSize="11" Foreground="{StaticResource MutedText}" Margin="1,0,0,1" />
+                                            <TextBox Text="{Binding FulfillmentDate, UpdateSourceTrigger=LostFocus}" KeyDown="DateBox_KeyDown" FontFamily="Consolas"
+                                                     ToolTip="A teljesítés dátuma. Begépelhető: 2026.09.02., 2026-09-02, 20260902, 02.09.2026 … (Enter: rögzítés)" />
+                                            <TextBlock Text="{Binding FulfillmentDateSource}" FontSize="10.5" Foreground="{StaticResource MutedText}" TextWrapping="Wrap" Margin="1,1,0,2" />
+                                            <ItemsControl ItemsSource="{Binding DataContext.FulfillmentDateSuggestions, RelativeSource={RelativeSource AncestorType=Window}}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Button Style="{StaticResource SuggestionChip}" Content="{Binding Value}" Tag="fulfillment" Click="DateSuggestion_Click"
+                                                                ToolTip="{Binding Source, StringFormat='A lapon: {0} – kattints az átvételhez'}" />
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="4" Margin="0">
+                                            <TextBlock Text="Fizetési határidő" FontSize="11" Foreground="{StaticResource MutedText}" Margin="1,0,0,1" />
+                                            <TextBox Text="{Binding DueDate, UpdateSourceTrigger=LostFocus}" KeyDown="DateBox_KeyDown" FontFamily="Consolas"
+                                                     ToolTip="A fizetési határidő. Begépelhető: 2026.09.02., 2026-09-02, 20260902, 02.09.2026 … (Enter: rögzítés)" />
+                                            <TextBlock Text="{Binding DueDateSource}" FontSize="10.5" Foreground="{StaticResource MutedText}" TextWrapping="Wrap" Margin="1,1,0,2" />
+                                            <ItemsControl ItemsSource="{Binding DataContext.DueDateSuggestions, RelativeSource={RelativeSource AncestorType=Window}}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Button Style="{StaticResource SuggestionChip}" Content="{Binding Value}" Tag="due" Click="DateSuggestion_Click"
+                                                                ToolTip="{Binding Source, StringFormat='A lapon: {0} – kattints az átvételhez'}" />
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Grid>
 
-                                    <TextBlock Grid.Row="6" Text="Fájlnév" Style="{StaticResource FieldLabel}" />
-                                    <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding DataContext.ProposedFileName, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    <TextBlock Grid.Row="6" Text="Vevő adószáma" Style="{StaticResource FieldLabel}" />
+                                    <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding Vat.Message}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,0,6" />
+
+                                    <TextBlock Grid.Row="7" Text="Fájlnév" Style="{StaticResource FieldLabel}" />
+                                    <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding DataContext.ProposedFileName, RelativeSource={RelativeSource AncestorType=Window}}"
                                                FontFamily="Consolas" VerticalAlignment="Center" TextWrapping="Wrap" />
 
-                                    <TextBlock Grid.Row="7" Text="Megbízhatóság" Style="{StaticResource FieldLabel}" VerticalAlignment="Top" Margin="0,6,12,0" />
-                                    <DockPanel Grid.Row="7" Grid.Column="1" Margin="0,6,0,0">
+                                    <TextBlock Grid.Row="8" Text="Megbízhatóság" Style="{StaticResource FieldLabel}" VerticalAlignment="Top" Margin="0,6,12,0" />
+                                    <DockPanel Grid.Row="8" Grid.Column="1" Margin="0,6,0,0">
                                         <Border DockPanel.Dock="Left" Background="{Binding Trust, Converter={StaticResource TrustBrush}}" CornerRadius="10" Padding="10,2"
                                                 VerticalAlignment="Top" Margin="0,0,10,0">
                                             <TextBlock Text="{Binding TrustText}" Foreground="White" FontWeight="SemiBold" />
@@ -643,6 +715,8 @@
                                                           ToolTip="Ez a számla egyáltalán ne kerüljön mentésre (pl. kétszer beszkennelt lap, vagy nem számla)" />
                                             <ToggleButton Style="{StaticResource ToggleAction}" Tag="&#xE73E;" Content="Adószám&#x0a;elfogadva" IsChecked="{Binding VatApproved}"
                                                           ToolTip="Ellenőriztem: a számla elfogadható, bár a vevő adószámát nem sikerült automatikusan igazolni" />
+                                            <ToggleButton Style="{StaticResource ToggleAction}" Tag="&#xE787;" Content="Dátumok&#x0a;elfogadva" IsChecked="{Binding DatesApproved}"
+                                                          ToolTip="Ellenőriztem: a dátumok így helyesek (szokatlan sorrend, régi dátum, vagy a számlán nem szereplő dátum is)" />
                                             <ToggleButton Style="{StaticResource ToggleAction}" Tag="&#xE8A5;" Content="Ez számla" IsChecked="{Binding IsInvoiceConfirmed}"
                                                           Visibility="{Binding IsNonInvoice, Converter={StaticResource BoolToVis}}"
                                                           ToolTip="Az oldal szállítólevélnek / kivonatnak / mellékletnek tűnik, de valójában számla" />
