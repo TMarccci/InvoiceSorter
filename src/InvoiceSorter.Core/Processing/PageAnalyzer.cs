@@ -188,6 +188,57 @@ public sealed class PageAnalyzer : IDisposable
         AppLog.Debug($"Page {page.Number}: {page.WordCount} words, ink {page.InkRatio:P2}");
     }
 
+    /// <summary>
+    /// Reads a page again from the PDF, rendered at <paramref name="dpi"/> and turned upright like the page
+    /// (<see cref="PageInfo.Rotation"/>), optionally with an image adjustment. Unlike the saved page image (JPEG) this
+    /// has no second compression; above the scan's own resolution the PDF renderer only interpolates.
+    /// </summary>
+    public async Task<PageInfo> ReadRenderedAsync(PageInfo page, int dpi, Enhancement enhancement = Enhancement.None, Language? language = null)
+    {
+        using var upright = await RenderUprightAsync(page, dpi);
+        SoftwareBitmap input = upright;
+        SoftwareBitmap? adjusted = null;
+        if (enhancement != Enhancement.None)
+        {
+            var pixels = new byte[upright.PixelWidth * upright.PixelHeight * 4];
+            upright.CopyToBuffer(pixels.AsBuffer());
+            adjusted = SoftwareBitmap.CreateCopyFromBuffer(ImageEnhancer.Apply(pixels, enhancement).AsBuffer(), BitmapPixelFormat.Bgra8,
+                upright.PixelWidth, upright.PixelHeight, BitmapAlphaMode.Premultiplied);
+            input = adjusted;
+        }
+        var engine = language == null || language.LanguageTag == _language.LanguageTag ? RentEngine()
+            : OcrEngine.TryCreateFromLanguage(language) ?? throw new InvalidOperationException($"Nem hozható létre OCR-motor ehhez a nyelvhez: {language.LanguageTag}");
+        try
+        {
+            var result = await RecognizeFittedAsync(engine, input);
+            return new PageInfo
+            {
+                Index = page.Index, ImagePath = page.ImagePath, PixelWidth = input.PixelWidth, PixelHeight = input.PixelHeight,
+                Rotation = page.Rotation, Lines = result.Lines,
+            };
+        }
+        finally
+        {
+            adjusted?.Dispose();
+            if (language == null || language.LanguageTag == _language.LanguageTag) _engines.Add(engine);
+        }
+    }
+
+    /// <summary>Renders a page and turns it like the page image (automatic or manual rotation). Neither side exceeds the OCR limit.</summary>
+    private async Task<SoftwareBitmap> RenderUprightAsync(PageInfo page, int dpi)
+    {
+        using var rendered = await RenderAsync(page.Index, dpi);
+        var decoder = await BitmapDecoder.CreateAsync(rendered);
+        var rotation = (((page.Rotation % 360) + 360) % 360) switch
+        {
+            90 => BitmapRotation.Clockwise90Degrees,
+            180 => BitmapRotation.Clockwise180Degrees,
+            270 => BitmapRotation.Clockwise270Degrees,
+            _ => BitmapRotation.None,
+        };
+        return await DecodeAsync(decoder, rotation);
+    }
+
     private OcrEngine RentEngine()
     {
         if (_engines.TryTake(out var engine)) return engine;

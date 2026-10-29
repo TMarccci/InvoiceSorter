@@ -31,6 +31,32 @@ public static class TextUtil
         return sb.ToString().Normalize(NormalizationForm.FormC);
     }
 
+    /// <summary>
+    /// The accents of <paramref name="reference"/> on the words of <paramref name="text"/> that are the same apart from
+    /// accents (a word may be the beginning of a reference word: "HÓSZIG" + "Hőszigetelő" → "HŐSZIG"). Accents are only
+    /// added or corrected, never removed (a register name without accents leaves the text as it is); the case stays.
+    /// </summary>
+    public static string AccentsFrom(string text, string reference)
+    {
+        var refs = Regex.Split(reference, @"[^\p{L}\p{Nd}]+").Where(w => w.Length > 0).ToList();
+        return Regex.Replace(text, @"\p{L}{3,}", m =>
+        {
+            var word = m.Value;
+            var folded = Fold(word);
+            var r = refs.FirstOrDefault(x => Fold(x).StartsWith(folded, StringComparison.Ordinal));
+            if (r == null) return word;
+            var chars = word.ToCharArray();
+            for (int i = 0; i < chars.Length && i < r.Length; i++)
+            {
+                char c = r[i];
+                if (c == chars[i] || char.ToLowerInvariant(c) == char.ToLowerInvariant(chars[i])) continue;
+                if (Fold(c.ToString()) == c.ToString().ToLowerInvariant()) continue;   // the reference letter has no accent
+                chars[i] = char.IsUpper(chars[i]) ? char.ToUpperInvariant(c) : char.ToLowerInvariant(c);
+            }
+            return new string(chars);
+        });
+    }
+
     /// <summary>Fold and keep only letters and digits.</summary>
     public static string Compact(string? s)
     {

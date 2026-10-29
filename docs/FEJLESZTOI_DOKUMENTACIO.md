@@ -50,7 +50,7 @@ Fontosabb Core-osztályok:
 | `PageAnalyzer` | PDF-oldalak renderelése, OCR, üres oldalak, forgatás; a `ProgressInfo` állapotnevei |
 | `InvoiceProcessor` | a teljes futás (`RunAsync`), szétbontás (`BuildDocuments`), olvasás, duplikátumok, javaslatok, kibocsátónév tanulása; kézi műveletek: `SplitAt`, `MergeInto`, `MovePage`, `DeletePage` / `RestorePage` (a törölt oldal `PageInfo.Deleted`, a `BuildDocuments` kihagyja) |
 | `FieldReader` | sablon felismerése (`FindStyle`, `MatchScore`) és mezők olvasása (fix / terület / címke / regex) |
-| `PageRefiner` | a hiányos számlák újraolvasása (nagyítás, nyelv, expozíció, Surya) |
+| `PageRefiner` | a hiányos számlák újraolvasása (Surya, majd a mentett oldalkép 2× nagyítva, nyelv, expozíció; a PDF-ből 300–600 DPI-n újrarajzolt kép mérve nem volt jobb – CLI `rerender-test`) |
 | `DateReader` | a három dátum: dátumkeresés (formátumok, OCR-javítás, időszakok), címkék a sorban és oszlopfejlécként, döntés az olvasatok között, egydátumos szabály, ellenőrzések, javaslatok |
 | `VatValidator` | magyar adószám: formátum, ellenőrzőszám, ÁFA-kód, megyekód, OCR-hibák tűrése |
 | `TrustScorer` | 0–100 pont és indoklás |
@@ -120,6 +120,14 @@ használd, ne szövegösszehasonlítást.
 - **Kulcs–érték blokk** (`FieldReader.IsNextKeyValueRow`): a címke alatti sor nem érték, ha a címke oszlopában egy
   másik címkével kezdődik, és az értéke közvetlenül a címkénk jobb oldalán áll („Számlaszám” alatt „Vevőszám 765432”).
   Cégnév (Kft., Zrt. …) nem kulcs.
+- **Általános számlaszám-szabály** (11. sablonverzió, migrációval): magyar nagybetűk a számban („2026/1234GYŰJTŐ”),
+  dátumdarab nem számlaszám („2026,09.18” → nem „09.18”), az OCR-ben egy számjegyet vesztett bankszámlaszám sem;
+  „Okirat száma” címke; a kétnyelvű címke vége („No.:”, „/ Number:”) kimarad. A Billingo, Számlázz.hu, Okos-Ügyvitel
+  és webshop sablon számában kell számjegy (a Billingo-ban kötőjel/perjel is), különben az általános címkék.
+- **Fordítva szkennelt számla:** „1/2” közvetlenül a „2/2” után, azonos szállítói adószámmal → egy számla.
+- **Ékezetek a cégnyilvántartásból** (`TextUtil.AccentsFrom`): a lapon olvasott név ékezetei a regisztrált név szerint
+  („HÓSZIG” → „HŐSZIG”), csak hozzáad / javít, nem töröl.
+- **Kisbetűs számlaszám** −10 pont (gyakran OCR-zaj: „301234567u”).
 - **Számlaszám a többi oldalról** (`InvoiceNumberOf`): ha egy későbbi oldal a teljes számot mutatja, amelynek az első
   oldalé csak egy része („45678” ⊂ „412345678”), a teljes nyer.
 
@@ -218,6 +226,8 @@ InvoiceSorter.Cli dump <workDir> <oldal>                    OCR-szavak koordiná
 InvoiceSorter.Cli test <workDir> <oldal> [--all]            melyik sablon hogyan olvassa az oldalt
 InvoiceSorter.Cli suggest <workDir> [--all]                 javaslatok a hibás számlák kibocsátójára / számlaszámára
 InvoiceSorter.Cli rotate <workDir> <oldal> <fok>            oldal forgatása és újraolvasása
+InvoiceSorter.Cli reread <workDir> <oldal> [--dpi 400] [--pdf <f>]   az oldal a PDF-ből újrarajzolva, a normál olvasat mellett
+InvoiceSorter.Cli rerender-test <workDir> [--dpi 300,400,600] [--pdf <f>]   újraolvasás mentett képből / PDF-ből, összevetés
 InvoiceSorter.Cli learn <workDir>... --settings <f>         „kibocsátó | adószám” párok tanulása
 InvoiceSorter.Cli surya-test <kép> [--server <cím> --api-key <kulcs>]   Surya próba (helyi vagy szerver)
 ```

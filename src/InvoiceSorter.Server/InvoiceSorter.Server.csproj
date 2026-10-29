@@ -10,7 +10,7 @@
     <Product>Invoice Sorter Server</Product>
     <Company>TMarccci</Company>
     <Copyright>© TMarccci</Copyright>
-    <Version>1.4.0</Version>
+    <Version>1.5.0</Version>
     <ApplicationIcon>..\..\assets\invoicesorter-server.ico</ApplicationIcon>
     <InvariantGlobalization>false</InvariantGlobalization>
   </PropertyGroup>

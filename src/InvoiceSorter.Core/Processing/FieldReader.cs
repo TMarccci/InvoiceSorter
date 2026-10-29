@@ -419,6 +419,15 @@ public static class FieldReader
             foreach (var w in row)
             {
                 double gap = w.X - lastRight;
+                // The rest of a bilingual label ("Számlaszám/Invoice No.:  …  26/0123", "Számlaszám / Number:  …"): the
+                // value may still be far away.
+                bool labelTail = (w.Text.EndsWith(':') && !w.Text.Any(char.IsDigit) && w.Text.Length <= 12) ||
+                                 w.Text.Trim('/', '|', '-', '–', ':').Length == 0;
+                if (result.Count == 0 && gap <= 0.12 && labelTail)
+                {
+                    lastRight = w.X + w.W;
+                    continue;
+                }
                 if (result.Count > 0 && gap > 0.12) break;
                 if (result.Count == 0 && gap > 0.8) break;
                 result.Add(w);

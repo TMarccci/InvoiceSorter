@@ -22,6 +22,9 @@ public sealed record RefinePass(Language Language, double Scale, Enhancement Enh
 /// different mistakes; faded or grey prints become readable after darkening, contrast stretching or turning
 /// them black &amp; white. The passes are tried one after another and stop for an invoice as soon as all of its
 /// details can be read. Each extra reading is kept in <see cref="PageInfo.ExtraReadings"/>.
+/// The scans are usually 200 DPI: a larger image only interpolates. Rendering the page again from the PDF at 300–600 DPI
+/// instead of enlarging the saved page image was measured on 540 invoices (CLI "rerender-test" / "reprocess
+/// --fresh-refine"): no gain overall, worse on black &amp; white till receipts – so the saved image is enlarged.
 /// </summary>
 public static class PageRefiner
 {
@@ -145,6 +148,10 @@ public static class PageRefiner
         });
         return fixedCount;
     }
+
+    /// <summary>One pass on the saved page image (for comparisons, e.g. with <see cref="PageAnalyzer.ReadRenderedAsync"/>).</summary>
+    public static async Task<PageInfo> ReadSavedImageAsync(PageInfo page, RefinePass pass) =>
+        await ReadAsync(page, await LoadScaledAsync(page.ImagePath, pass.Scale), pass, new ConcurrentDictionary<string, ConcurrentBag<OcrEngine>>());
 
     private static async Task<(byte[] Pixels, int Width, int Height)> LoadScaledAsync(string path, double requestedScale)
     {

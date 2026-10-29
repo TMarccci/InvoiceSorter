@@ -201,7 +201,12 @@ public static class InvoiceProcessor
                     ((style != null && style == current.Style) ||
                      (previousCounter is { } prev && prev.Page == later.Page - 1 &&
                       ((prev.HasTotal && later.HasTotal && prev.Of == later.Of) || (!prev.HasTotal && !later.HasTotal)))) &&
-                    !OtherInvoiceNumber(current, page, fallback, settings));
+                    !OtherInvoiceNumber(current, page, fallback, settings))
+                // An invoice scanned back to front: "1/2" right after its "2/2" (the counters complete each other), when
+                // both pages show the same supplier tax number – the invoice numbers may be read differently (a pen mark).
+                || (current != null && counter is { HasTotal: true } back && currentCounters.Count > 0 &&
+                    currentCounters.All(x => x.Of == back.Of) && !currentCounters.Contains((back.Page, back.Of)) &&
+                    currentCounters.Min(x => x.Page) == back.Page + 1 && SameSupplier(current, page, settings));
             if (!page.IsBlank && !(counter == null && titleContinuation)) previousCounter = counter;
             var mentionsReceiver = style == null && settings.NewDocumentOnReceiverMatch && page.Readings.Any(r =>
                 VatValidator.MentionsReceiver(r.Text, r.CompactText, settings.ReceiverCompanies, settings.FuzzyTolerance));
@@ -495,7 +500,9 @@ public static class InvoiceProcessor
         if (read.Length > 0 && names.FirstOrDefault(n => n.Name == read || SameCompany(read, n.Name!)) is { Name: not null } matching)
             // A name from the known issuers list is the user's spelling; the register's long official name is only used
             // when the page shows something else ("Delta Kft." printed → kept, "OTP Bank Nyrt." read → replaced).
-            return matching.Known ? matching.Name : read;
+            // The read spelling, with the accents of the registered name ("HÓSZIG Kft." → "HŐSZIG Kft.", from
+            // "Hőszigetelő …"): the OCR often confuses Ő/Ó, and the same supplier must get the same file name.
+            return matching.Known ? matching.Name : TextUtil.AccentsFrom(read, matching.Name!);
         return names.Count == 1 ? names[0].Name : null;
     }
 
@@ -755,6 +762,13 @@ public static class InvoiceProcessor
             }
         }
         return null;
+    }
+
+    /// <summary>The page and the first page of the invoice show the same supplier tax number.</summary>
+    private static bool SameSupplier(InvoiceDocument doc, PageInfo page, AppSettings settings)
+    {
+        var mine = SupplierTaxNumbers(new[] { page }, settings).Select(t => t.Core).ToHashSet();
+        return mine.Count > 0 && SupplierTaxNumbers(doc.Pages.Take(1), settings).Any(t => mine.Contains(t.Core));
     }
 
     /// <summary>

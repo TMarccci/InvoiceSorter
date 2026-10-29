@@ -3,7 +3,7 @@
 ; A kiadott (single-file) exe helye: ..\..\publish\client\InvoiceSorter.exe  (felülírható: /DClientExe=<útvonal>)
 
 #ifndef AppVersion
-  #define AppVersion "1.4.0"
+  #define AppVersion "1.5.0"
 #endif
 #ifndef ClientExe
   #define ClientExe "..\..\publish\client\InvoiceSorter.exe"

@@ -53,8 +53,8 @@ A *Feldolgozás indítása* után a program:
 - a többi oldalt (reklámos hátoldal, folytatólap, ÁSZF) az előző számlához csatolja; az egymás utáni azonos
   számlaszámú számlákat összevonja;
 - kiolvassa a kibocsátót és a számlaszámot, megkeresi a vevő adószámát;
-- a hiányos számlákat **újraolvassa** (nagyítva, a másik OCR-nyelvvel, világosabban/sötétebben, fekete-fehéren,
-  illetve beállítástól függően Surya OCR-rel).
+- a hiányos számlákat **újraolvassa** (beállítástól függően először Surya OCR-rel, majd kétszeres nagyításban, a másik
+  OCR-nyelvvel, sötétebben/világosabban, nagyobb kontraszttal, fekete-fehéren).
 
 Közben látod az éppen olvasott oldalt a megtalált adatok kereteivel, az eltelt és a hátralévő időt. Ha a Surya a
 szerveren fut, és más gépek oldalai is várnak, a sorban elfoglalt hely is megjelenik („Sorban áll a szerveren: 3. hely”).
@@ -181,7 +181,7 @@ a kibocsátót olvasd az oldalról – így egy sablon minden cégre jó, amely 
 Beépített sablonok: Számlázz.hu, Billingo, NAV Online Számlázó, pénztárgépes nyugták, NaturaSoft, Okos-Ügyvitel,
 FR-SOFT, Vectory, JUTA-soft, MVM LIBRA, SAP Business One, Microsoft Dynamics 365 Business Central, Diamond Stúdió,
 InfoCentrum, HUGIR, RLB-60, webshop-számlák, előnyomott számlatömb, valamint néhány nagy szolgáltató saját rendszere
-(METRO, Magyar Telekom, MOL üzemanyagkártya, FleetCor, ZNET, ViDaNet, Roto Elzett). Amit egyik sem ismer fel, azt az **Általános
+(METRO, Magyar Telekom, MOL üzemanyagkártya, FleetCor, ZNET, ViDaNet, Roto Elzett, HŐSZIG, Alza.hu). Amit egyik sem ismer fel, azt az **Általános
 (nincs sablon)** szabályai olvassák. A *Beépített sablonok visszaállítása…* a hiányzókat pótolja.
 
 ### Szűrők (haladó)
@@ -296,6 +296,13 @@ szétbontja őket, és a hibás számlák közé teszi – a kibocsátót és a 
 
 **Egy halvány nyugta adatai nem olvashatók.** Kapcsold be a Surya OCR-t (*Csak a bizonytalan számlákhoz*), vagy írd be
 kézzel.
+
+**Segítene a nagyobb DPI?** A program oldalán nem: a szkennelt PDF-ekben a kép 200 DPI-s, ennél nagyobb felbontásban
+csak felnagyítani lehet, új részlet nem jelenik meg. 540 számlán kipróbáltuk: az újraolvasás 300, 400 és 600 DPI-s
+újrarajzolással összességében ugyanannyit olvasott, mint a mostani kétszeres nagyítás (a fekete-fehér nyugtáknál
+rosszabbat), ezért maradt a mostani. A sötétítés, a kontraszt, a fekete-fehér kép, a másik OCR-nyelv és főleg a Surya
+sokkal többet hoz. Ami valóban segít, az a **szkenner** beállítása: 300 DPI és szürkeárnyalatos (nem fekete-fehér)
+szkennelés – főleg a halvány hőpapíros nyugtáknál és az apró betűs számláknál.
 
 **Rossz helyen vágta szét a számlákat.** Használd a *Szétvágás itt* / *Összevonás* gombokat. Ha egy számlázóprogram
 rendszeresen gondot okoz, készíts hozzá sablont – az *Újrafelismerés* után az egész fájlra érvényes lesz.

@@ -168,6 +168,69 @@ switch (args[0])
         Console.WriteLine($"best: {FieldReader.FindStyle(page, styles, settings)?.Name ?? "-"}");
         break;
     }
+    case "reread":
+    {
+        // reread <workDir> <page> [--dpi 400] [--pdf source.pdf]: the page read again from the PDF (as the re-read passes
+        // do, turned like the page) next to its normal reading.
+        var job = JobCache.Load(args[1]);
+        var page = job.Pages[int.Parse(args[2]) - 1];
+        using var analyzer = await PageAnalyzer.OpenAsync(Opt("--pdf") ?? job.SourcePath, settings.OcrLanguage);
+        var reading = await analyzer.ReadRenderedAsync(page, int.Parse(Opt("--dpi") ?? "400"));
+        Console.WriteLine($"Page {page.Number}, rotation {page.Rotation}°: normal {page.WordCount} words, from the PDF {reading.WordCount} words ({reading.PixelWidth}×{reading.PixelHeight} px)");
+        foreach (var (a, b) in page.Lines.Take(12).Zip(reading.Lines.Take(12)))
+            Console.WriteLine($"   {a.Text,-60} | {b.Text}");
+        break;
+    }
+    case "rerender-test":
+    {
+        // rerender-test <workDir> [--dpi 300,400,600] [--max N] [--pdf source.pdf]: how one re-read reads the invoices that need one –
+        // from the saved page image enlarged 2× (the current first pass) or from the PDF rendered again.
+        var job = JobCache.Load(args[1]);
+        foreach (var p in job.Pages) { p.ExtraReadings = new(); p.RefinePassesDone = 0; }
+        InvoiceProcessor.DetectReceiver(job, settings, null);
+        var jobSettings = InvoiceProcessor.SettingsFor(job, settings);
+        InvoiceProcessor.BuildDocuments(job, styles, jobSettings);
+        var candidates = PageRefiner.InvoicesNeedingRefinement(job.Documents, styles, jobSettings).Take(int.Parse(Opt("--max") ?? "100000")).ToList();
+        using var analyzer = await PageAnalyzer.OpenAsync(Opt("--pdf") ?? job.SourcePath, settings.OcrLanguage);
+        var firstPass = PageRefiner.Passes(jobSettings).First(p => !p.Surya);
+        var variants = new List<(string Name, Func<PageInfo, Task<PageInfo>> Read)> { ("JPEG 2x", p => PageRefiner.ReadSavedImageAsync(p, firstPass)) };
+        foreach (var dpi in (Opt("--dpi") ?? "300,400,600").Split(',').Select(int.Parse))
+            variants.Add(($"PDF {dpi}", p => analyzer.ReadRenderedAsync(p, dpi)));
+        var totals = variants.ToDictionary(v => v.Name, _ => new int[6]);
+        var times = variants.ToDictionary(v => v.Name, _ => TimeSpan.Zero);
+        string Brief(InvoiceDocument d) => $"{d.Issuer} | {d.InvoiceNumber} | {(d.Vat.Status == VatStatus.Valid || d.VatApproved ? "ÁFA ok" : "ÁFA -")} | {Or(d.IssueDate)} {Or(d.FulfillmentDate)} {Or(d.DueDate)}";
+        static string Or(string s) => string.IsNullOrEmpty(s) ? "–" : s;
+        foreach (var doc in candidates)
+        {
+            var pages = doc.Pages.Take(2).Where(p => !p.IsBlank && File.Exists(p.ImagePath)).ToList();
+            Console.WriteLine($"#{doc.Number} p{doc.PageRange} {doc.StyleName}\n   alap:     {Brief(doc)}  [{doc.Errors.Count} hiba]");
+            foreach (var (name, read) in variants)
+            {
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                foreach (var p in pages) p.ExtraReadings = new() { await read(p) };
+                times[name] += sw.Elapsed;
+                InvoiceProcessor.ReadDocument(doc, jobSettings);
+                var t = totals[name];
+                bool resolved = PageRefiner.IsResolved(doc, styles, jobSettings);
+                if (resolved) t[0]++;
+                if (!string.IsNullOrWhiteSpace(doc.Issuer)) t[1]++;
+                if (!string.IsNullOrWhiteSpace(doc.InvoiceNumber)) t[2]++;
+                if (doc.Vat.Status == VatStatus.Valid) t[3]++;
+                if (doc.IssueDate.Length > 0 && doc.FulfillmentDate.Length > 0 && doc.DueDate.Length > 0) t[4]++;
+                t[5] += doc.Errors.Count;
+                Console.WriteLine($"   {name,-9} {Brief(doc)}  [{doc.Errors.Count} hiba{(resolved ? ", megoldva" : "")}]");
+            }
+            foreach (var p in pages) p.ExtraReadings = new();
+            InvoiceProcessor.ReadDocument(doc, jobSettings);
+        }
+        Console.WriteLine($"ÖSSZESEN {candidates.Count} újraolvasandó számla");
+        foreach (var (name, _) in variants)
+        {
+            var t = totals[name];
+            Console.WriteLine($"   {name,-9} megoldva {t[0]}, kibocsátó {t[1]}, számlaszám {t[2]}, adószám {t[3]}, dátumok {t[4]}, hibák {t[5]}, idő {times[name].TotalSeconds:0} mp");
+        }
+        break;
+    }
     case "suggest":
     {
         // suggest <workDir> [--no-refine ...]: issuer / invoice number suggestions of every invoice with problems.

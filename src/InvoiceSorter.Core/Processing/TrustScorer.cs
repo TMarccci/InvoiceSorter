@@ -66,6 +66,9 @@ public static class TrustScorer
         {
             var field = style.InvoiceNumber;
             if (string.IsNullOrWhiteSpace(field.Regex)) Deduct(10, "a számlaszámot nem ellenőrzi minta (regex)");
+            // Invoice numbers are capitals, digits and separators: a lowercase letter is almost always OCR noise
+            // ("301234567u", "Oi-Uü790").
+            if (doc.InvoiceNumber.Any(char.IsLower)) Deduct(10, "a számlaszámban kisbetű van – gyakran OCR-hiba, nézd meg");
 
             // Which readings of the page give the number, and do they agree?
             int agree = 0, disagree = 0;

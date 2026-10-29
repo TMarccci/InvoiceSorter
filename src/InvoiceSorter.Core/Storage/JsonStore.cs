@@ -38,7 +38,7 @@ public static class JsonStore
     }
 
     /// <summary>Version of the built-in styles shipped in DefaultStyles.json. Increase when they change.</summary>
-    public const int BuiltInStylesVersion = 10;
+    public const int BuiltInStylesVersion = 11;
 
     // Company-name filter of the built-in styles, in its successive versions (the last one is current).
     private const string CompanyV1 = @"^(?<value>.{2,}?\b(?:K\s?[fti1l]\s?[ti1l]|Z\s?[rt]\s?t|N\s?y\s?r\s?t|B\s?t|K\s?k\s?t)\b\.?)";
@@ -59,6 +59,13 @@ public static class JsonStore
         (@"(?!\d{2}[./-]\d{2}[./-]\d{4})", @"(?!(?:0[1-9]|[12]\d|3[01])[./-](?:0[1-9]|1[0-2])[./-]\d{4}(?![0-9/]))", false),
         // … and e-mail addresses ("siometrik2019@gmail.com") are not invoice numbers.
         (@"\s*\()(?<value>(?=(?:[^\s\d]*\d){3})", @"\s*\()(?![A-Z0-9/._-]*@)(?<value>(?=(?:[^\s\d]*\d){3})", false),
+        // Version 11: Hungarian capitals inside invoice numbers ("2026/1234GYŰJTŐ"), bank accounts with a digit lost
+        // by the OCR ("1600006-00000000-12345678") are not invoice numbers …
+        (@"(?<![0-9A-Za-z/._-])", @"(?<![0-9A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű/._-])", false),
+        (@"(?=(?:[^\s\d]*\d){3})[A-Z0-9][A-Z0-9/._-]{3,})", @"(?=(?:[^\s\d]*\d){3})[A-Z0-9ÁÉÍÓÖŐÚÜŰ][A-Z0-9ÁÉÍÓÖŐÚÜŰ/._-]{3,})", false),
+        (@"(?!\d{8}-\d{8})", @"(?!\d{6,8}-\d{7,8})", false),
+        // … and no date fragments either ("2026,09.18" read with a comma → "09.18", a lone "09.18.").
+        (@"(?![A-Z0-9/._-]*@)(?<value>", @"(?![A-Z0-9/._-]*@)(?<!(?:19|20)\d{2}[.,]\s?)(?!(?:0[1-9]|1[0-2])[.,](?:0[1-9]|[12]\d|3[01])\.?(?![0-9A-Za-z/_-]))(?<value>", false),
     };
 
     /// <summary>Changes of built-in label texts: (style id, old label text, new label text) of the invoice number field.</summary>
@@ -67,6 +74,10 @@ public static class JsonStore
         ("generic",
          "Számlaszám | Számla sorszáma | Számla száma | Számlasorszám | Számla szám | Sorszám | Bizonylatszám | Invoice No | Invoice number",
          "Számlaszám | Számla sorszáma | Számla száma | Számlasorszám | Számla szám | Sorszám | Bizonylatszám | Invoice No | Invoice number | Számla / Invoice"),
+        // Version 11: "Okirat száma" – a document treated as an invoice ("Számlával egy tekintet alá eső okirat").
+        ("generic",
+         "Számlaszám | Számla sorszáma | Számla száma | Számlasorszám | Számla szám | Sorszám | Bizonylatszám | Invoice No | Invoice number | Számla / Invoice",
+         "Számlaszám | Számla sorszáma | Számla száma | Számlasorszám | Számla szám | Sorszám | Bizonylatszám | Okirat száma | Invoice No | Invoice number | Számla / Invoice"),
     };
 
     // Version 5: receipts with OCR-damaged closing/serial numbers ("0340/OOOOl", "U298"), the "NAV El. kód" line,
@@ -81,7 +92,17 @@ public static class JsonStore
     {
         ("nav-penztargep", NavNumberV4, "${p}${digits}/${z}/${s}", NavNumberV5, "${p}${digits}/${digitsZ}/${digitsS}"),
         ("metro", MetroNumberV4, "", MetroNumberV5, "${digitsY}-${digitsA}/${digitsB}(${digitsT}) ${digitsR}/${digitsN}"),
+        // Version 11: an invoice number has a digit – "Számladátum" under the "Számla" label of another layout is not one.
+        ("szamlazzhu-standard", AnyWordV10, "", AnyWordWithDigitV11, ""),
+        // Billingo: its own number shape ("2026-000123"), otherwise the generic labels of other layouts (fallback).
+        ("billingo", AnyWordV10, "", BillingoNumberV11, ""),
+        ("okos-ugyvitel", AnyWordV10, "", AnyWordWithDigitV11, ""),
+        ("webshop-ertekesites", AnyWordV10, "", AnyWordWithDigitV11, ""),
     };
+
+    private const string AnyWordV10 = @"^(\S{3,})";
+    private const string AnyWordWithDigitV11 = @"^(?=\S*\d)(\S{3,})";
+    private const string BillingoNumberV11 = @"^(?=\S*\d)([\p{L}\d]+(?:[-/][\p{L}\d]+)+)";
 
     /// <summary>Changes of built-in identifier rules: (style id, old text, new text).</summary>
     private static readonly (string StyleId, string Old, string New)[] RuleMigrations =

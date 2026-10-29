@@ -23,7 +23,7 @@
       "Mode": "Label",
       "LabelText": "Sorszám",
       "LabelDirection": "Right",
-      "Regex": "^(\\S{3,})",
+      "Regex": "^(?=\\S*\\d)(\\S{3,})",
       "RemoveSpaces": true
     }
   },
@@ -72,8 +72,14 @@
       "Mode": "Label",
       "LabelText": "Számla",
       "LabelDirection": "Below",
-      "Regex": "^(\\S{3,})",
-      "RemoveSpaces": true
+      "Regex": "^(?=\\S*\\d)([\\p{L}\\d]+(?:[-/][\\p{L}\\d]+)+)",
+      "RemoveSpaces": true,
+      "Fallback": {
+        "Mode": "Label",
+        "LabelText": "Számlaszám | Számla sorszáma | Számla száma | Számlasorszám | Számla szám | Sorszám | Bizonylatszám | Okirat száma | Invoice No | Invoice number | Számla / Invoice",
+        "LabelDirection": "Auto",
+        "Regex": "(?<![0-9A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű/._-])(?!\\d{6,8}-\\d{7,8})(?!\\d{8}-\\d-\\d{2})(?!\\d{4}[./-](?:0[1-9]|1[0-2])[./-](?:0[1-9]|[12]\\d|3[01])(?![0-9/]))(?!(?:0[1-9]|[12]\\d|3[01])[./-](?:0[1-9]|1[0-2])[./-]\\d{4}(?![0-9/]))(?!(?:19|20)\\d{2}\\.?(?![0-9A-Za-z/_-]))(?!\\d{1,4}/(?:19|20)\\d{2}\\.?\\s*\\()(?![A-Z0-9/._-]*@)(?<!(?:19|20)\\d{2}[.,]\\s?)(?!(?:0[1-9]|1[0-2])[.,](?:0[1-9]|[12]\\d|3[01])\\.?(?![0-9A-Za-z/_-]))(?<value>(?=(?:[^\\s\\d]*\\d){3})[A-Z0-9ÁÉÍÓÖŐÚÜŰ][A-Z0-9ÁÉÍÓÖŐÚÜŰ/._-]{3,})"
+      }
     }
   },
   {
@@ -118,7 +124,7 @@
       "Mode": "Label",
       "LabelText": "Bizonylat sorszáma",
       "LabelDirection": "Right",
-      "Regex": "^(\\S{3,})",
+      "Regex": "^(?=\\S*\\d)(\\S{3,})",
       "RemoveSpaces": true
     },
     "Notes": "NetSoft Okos-Ügyvitel. Kibocsátó a 'Szállító' alatt."
@@ -253,7 +259,7 @@
         "Mode": "Label",
         "LabelText": "Számlaszám | Számla sorszáma | Számla száma | Sorszám",
         "LabelDirection": "Auto",
-        "Regex": "(?<![0-9A-Za-z/._-])(?!(?:19|20)\\d{2}/\\d{2}/\\d{2}(?!\\d))(?<value>\\d{3,5}(?:/\\d{1,6}){1,3})(?![0-9A-Za-z/])"
+        "Regex": "(?<![0-9A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű/._-])(?!(?:19|20)\\d{2}/\\d{2}/\\d{2}(?!\\d))(?<value>\\d{3,5}(?:/\\d{1,6}){1,3})(?![0-9A-Za-z/])"
       }
     }
   },
@@ -337,7 +343,7 @@
       "Mode": "Label",
       "LabelText": "Sorszám",
       "LabelDirection": "Right",
-      "Regex": "^(\\S{3,})",
+      "Regex": "^(?=\\S*\\d)(\\S{3,})",
       "RemoveSpaces": true
     }
   },
@@ -446,7 +452,7 @@
         "Mode": "Label",
         "LabelText": "Számla sorszám | Számla sorszáma",
         "LabelDirection": "Auto",
-        "Regex": "(?<![0-9A-Za-z/._-])(?!\\d{8}-\\d{8})(?!\\d{8}-\\d-\\d{2})(?!\\d{4}[./-](?:0[1-9]|1[0-2])[./-](?:0[1-9]|[12]\\d|3[01])(?![0-9/]))(?!(?:0[1-9]|[12]\\d|3[01])[./-](?:0[1-9]|1[0-2])[./-]\\d{4}(?![0-9/]))(?!(?:19|20)\\d{2}\\.?(?![0-9A-Za-z/_-]))(?!\\d{1,4}/(?:19|20)\\d{2}\\.?\\s*\\()(?![A-Z0-9/._-]*@)(?<value>(?=(?:[^\\s\\d]*\\d){3})[A-Z0-9][A-Z0-9/._-]{3,})"
+        "Regex": "(?<![0-9A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű/._-])(?!\\d{6,8}-\\d{7,8})(?!\\d{8}-\\d-\\d{2})(?!\\d{4}[./-](?:0[1-9]|1[0-2])[./-](?:0[1-9]|[12]\\d|3[01])(?![0-9/]))(?!(?:0[1-9]|[12]\\d|3[01])[./-](?:0[1-9]|1[0-2])[./-]\\d{4}(?![0-9/]))(?!(?:19|20)\\d{2}\\.?(?![0-9A-Za-z/_-]))(?!\\d{1,4}/(?:19|20)\\d{2}\\.?\\s*\\()(?![A-Z0-9/._-]*@)(?<!(?:19|20)\\d{2}[.,]\\s?)(?!(?:0[1-9]|1[0-2])[.,](?:0[1-9]|[12]\\d|3[01])\\.?(?![0-9A-Za-z/_-]))(?<value>(?=(?:[^\\s\\d]*\\d){3})[A-Z0-9ÁÉÍÓÖŐÚÜŰ][A-Z0-9ÁÉÍÓÖŐÚÜŰ/._-]{3,})"
       }
     }
   },
@@ -478,7 +484,7 @@
         "Mode": "Label",
         "LabelText": "Számlaszám | Számla sorszáma | Számla száma | Számlasorszám | Számla szám | Sorszám | Bizonylatszám | Invoice No | Invoice number",
         "LabelDirection": "Auto",
-        "Regex": "(?<![0-9A-Za-z/._-])(?!\\d{8}-\\d{8})(?!\\d{8}-\\d-\\d{2})(?!\\d{4}[./-](?:0[1-9]|1[0-2])[./-](?:0[1-9]|[12]\\d|3[01])(?![0-9/]))(?!(?:0[1-9]|[12]\\d|3[01])[./-](?:0[1-9]|1[0-2])[./-]\\d{4}(?![0-9/]))(?!(?:19|20)\\d{2}\\.?(?![0-9A-Za-z/_-]))(?!\\d{1,4}/(?:19|20)\\d{2}\\.?\\s*\\()(?![A-Z0-9/._-]*@)(?<value>(?=(?:[^\\s\\d]*\\d){3})[A-Z0-9][A-Z0-9/._-]{3,})"
+        "Regex": "(?<![0-9A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű/._-])(?!\\d{6,8}-\\d{7,8})(?!\\d{8}-\\d-\\d{2})(?!\\d{4}[./-](?:0[1-9]|1[0-2])[./-](?:0[1-9]|[12]\\d|3[01])(?![0-9/]))(?!(?:0[1-9]|[12]\\d|3[01])[./-](?:0[1-9]|1[0-2])[./-]\\d{4}(?![0-9/]))(?!(?:19|20)\\d{2}\\.?(?![0-9A-Za-z/_-]))(?!\\d{1,4}/(?:19|20)\\d{2}\\.?\\s*\\()(?![A-Z0-9/._-]*@)(?<!(?:19|20)\\d{2}[.,]\\s?)(?!(?:0[1-9]|1[0-2])[.,](?:0[1-9]|[12]\\d|3[01])\\.?(?![0-9A-Za-z/_-]))(?<value>(?=(?:[^\\s\\d]*\\d){3})[A-Z0-9ÁÉÍÓÖŐÚÜŰ][A-Z0-9ÁÉÍÓÖŐÚÜŰ/._-]{3,})"
       }
     }
   },
@@ -536,9 +542,9 @@
       "Regex": "(?<value>(?=(?:[^\\s\\d]*\\d){3})[A-Z0-9][A-Z0-9_/.-]{4,})",
       "Fallback": {
         "Mode": "Label",
-        "LabelText": "Számlaszám | Számla sorszáma | Számla száma | Számlasorszám | Számla szám | Sorszám | Bizonylatszám | Invoice No | Invoice number | Számla / Invoice",
+        "LabelText": "Számlaszám | Számla sorszáma | Számla száma | Számlasorszám | Számla szám | Sorszám | Bizonylatszám | Okirat száma | Invoice No | Invoice number | Számla / Invoice",
         "LabelDirection": "Auto",
-        "Regex": "(?<![0-9A-Za-z/._-])(?!\\d{8}-\\d{8})(?!\\d{8}-\\d-\\d{2})(?!\\d{4}[./-](?:0[1-9]|1[0-2])[./-](?:0[1-9]|[12]\\d|3[01])(?![0-9/]))(?!(?:0[1-9]|[12]\\d|3[01])[./-](?:0[1-9]|1[0-2])[./-]\\d{4}(?![0-9/]))(?!(?:19|20)\\d{2}\\.?(?![0-9A-Za-z/_-]))(?!\\d{1,4}/(?:19|20)\\d{2}\\.?\\s*\\()(?![A-Z0-9/._-]*@)(?<value>(?=(?:[^\\s\\d]*\\d){3})[A-Z0-9][A-Z0-9/._-]{3,})"
+        "Regex": "(?<![0-9A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű/._-])(?!\\d{6,8}-\\d{7,8})(?!\\d{8}-\\d-\\d{2})(?!\\d{4}[./-](?:0[1-9]|1[0-2])[./-](?:0[1-9]|[12]\\d|3[01])(?![0-9/]))(?!(?:0[1-9]|[12]\\d|3[01])[./-](?:0[1-9]|1[0-2])[./-]\\d{4}(?![0-9/]))(?!(?:19|20)\\d{2}\\.?(?![0-9A-Za-z/_-]))(?!\\d{1,4}/(?:19|20)\\d{2}\\.?\\s*\\()(?![A-Z0-9/._-]*@)(?<!(?:19|20)\\d{2}[.,]\\s?)(?!(?:0[1-9]|1[0-2])[.,](?:0[1-9]|[12]\\d|3[01])\\.?(?![0-9A-Za-z/_-]))(?<value>(?=(?:[^\\s\\d]*\\d){3})[A-Z0-9ÁÉÍÓÖŐÚÜŰ][A-Z0-9ÁÉÍÓÖŐÚÜŰ/._-]{3,})"
       }
     }
   },
@@ -698,7 +704,7 @@
       "Mode": "Label",
       "LabelText": "Sorszám",
       "LabelDirection": "Right",
-      "Regex": "(?<![0-9A-Za-z/._-])(?!\\d{8}-\\d{8})(?!\\d{8}-\\d-\\d{2})(?!\\d{4}[./-](?:0[1-9]|1[0-2])[./-](?:0[1-9]|[12]\\d|3[01])(?![0-9/]))(?!(?:0[1-9]|[12]\\d|3[01])[./-](?:0[1-9]|1[0-2])[./-]\\d{4}(?![0-9/]))(?!(?:19|20)\\d{2}\\.?(?![0-9A-Za-z/_-]))(?!\\d{1,4}/(?:19|20)\\d{2}\\.?\\s*\\()(?![A-Z0-9/._-]*@)(?<value>(?=(?:[^\\s\\d]*\\d){3})[A-Z0-9][A-Z0-9/._-]{3,})"
+      "Regex": "(?<![0-9A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű/._-])(?!\\d{6,8}-\\d{7,8})(?!\\d{8}-\\d-\\d{2})(?!\\d{4}[./-](?:0[1-9]|1[0-2])[./-](?:0[1-9]|[12]\\d|3[01])(?![0-9/]))(?!(?:0[1-9]|[12]\\d|3[01])[./-](?:0[1-9]|1[0-2])[./-]\\d{4}(?![0-9/]))(?!(?:19|20)\\d{2}\\.?(?![0-9A-Za-z/_-]))(?!\\d{1,4}/(?:19|20)\\d{2}\\.?\\s*\\()(?![A-Z0-9/._-]*@)(?<!(?:19|20)\\d{2}[.,]\\s?)(?!(?:0[1-9]|1[0-2])[.,](?:0[1-9]|[12]\\d|3[01])\\.?(?![0-9A-Za-z/_-]))(?<value>(?=(?:[^\\s\\d]*\\d){3})[A-Z0-9ÁÉÍÓÖŐÚÜŰ][A-Z0-9ÁÉÍÓÖŐÚÜŰ/._-]{3,})"
     }
   },
   {
@@ -725,6 +731,62 @@
     "InvoiceNumber": {
       "Mode": "PageRegex",
       "Regex": "(?<![A-Z0-9])(?<value>[A-Z]{1,6}\\d{3,}/(?:19|20)\\d{2})(?![0-9])"
+    }
+  },
+  {
+    "Id": "hoszig",
+    "Name": "HŐSZIG (saját rendszer)",
+    "Enabled": true,
+    "IsFallback": false,
+    "Notes": "HŐSZIG Kft. (Szigetvár) számlái és előlegszámlái. A számlaszám '004321/2026' alakú; az OCR gyakran elhagyja a perjelet ('004321 2026'), ezt pótolja.",
+    "IdentifierRules": [
+      {
+        "Text": "HŐSZIG Kft"
+      },
+      {
+        "Text": "Számla sorszáma"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Fixed",
+      "FixedValue": "HŐSZIG Kft."
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Számla sorszáma",
+      "LabelDirection": "Below",
+      "Regex": "(?<digits>(?<![0-9])[0-9OoIl]{6})\\s*/?\\s*(?<digitsY>(?:19|20)\\d{2})(?![0-9])",
+      "Format": "${digits}/${digitsY}",
+      "FixOcrDigits": true
+    }
+  },
+  {
+    "Id": "alza",
+    "Name": "Alza.hu",
+    "Enabled": true,
+    "IsFallback": false,
+    "Notes": "Alza.hu Kft. számlái ('Jótállási jegy és bizonylat'). A számlaszám a fejlécben áll: 'Számla - AHUW261234567'. Teljesítés dátuma = 'Tranzakció'.",
+    "IdentifierRules": [
+      {
+        "Text": "Alza.hu Kft"
+      },
+      {
+        "Text": "Jótállási jegy"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Fixed",
+      "FixedValue": "Alza.hu Kft."
+    },
+    "InvoiceNumber": {
+      "Mode": "PageRegex",
+      "Regex": "Sz[áa]ml[ao]\\s*[-–—]?\\s*(?<value>[A-Z]{3,5}\\s?\\d{8,12})(?![0-9])",
+      "RemoveSpaces": true
+    },
+    "FulfillmentDate": {
+      "Mode": "Label",
+      "LabelText": "Tranzakció",
+      "LabelDirection": "Right"
     }
   },
   {
@@ -795,9 +857,9 @@
     },
     "InvoiceNumber": {
       "Mode": "Label",
-      "LabelText": "Számlaszám | Számla sorszáma | Számla száma | Számlasorszám | Számla szám | Sorszám | Bizonylatszám | Invoice No | Invoice number | Számla / Invoice",
+      "LabelText": "Számlaszám | Számla sorszáma | Számla száma | Számlasorszám | Számla szám | Sorszám | Bizonylatszám | Okirat száma | Invoice No | Invoice number | Számla / Invoice",
       "LabelDirection": "Auto",
-      "Regex": "(?<![0-9A-Za-z/._-])(?!\\d{8}-\\d{8})(?!\\d{8}-\\d-\\d{2})(?!\\d{4}[./-](?:0[1-9]|1[0-2])[./-](?:0[1-9]|[12]\\d|3[01])(?![0-9/]))(?!(?:0[1-9]|[12]\\d|3[01])[./-](?:0[1-9]|1[0-2])[./-]\\d{4}(?![0-9/]))(?!(?:19|20)\\d{2}\\.?(?![0-9A-Za-z/_-]))(?!\\d{1,4}/(?:19|20)\\d{2}\\.?\\s*\\()(?![A-Z0-9/._-]*@)(?<value>(?=(?:[^\\s\\d]*\\d){3})[A-Z0-9][A-Z0-9/._-]{3,})"
+      "Regex": "(?<![0-9A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű/._-])(?!\\d{6,8}-\\d{7,8})(?!\\d{8}-\\d-\\d{2})(?!\\d{4}[./-](?:0[1-9]|1[0-2])[./-](?:0[1-9]|[12]\\d|3[01])(?![0-9/]))(?!(?:0[1-9]|[12]\\d|3[01])[./-](?:0[1-9]|1[0-2])[./-]\\d{4}(?![0-9/]))(?!(?:19|20)\\d{2}\\.?(?![0-9A-Za-z/_-]))(?!\\d{1,4}/(?:19|20)\\d{2}\\.?\\s*\\()(?![A-Z0-9/._-]*@)(?<!(?:19|20)\\d{2}[.,]\\s?)(?!(?:0[1-9]|1[0-2])[.,](?:0[1-9]|[12]\\d|3[01])\\.?(?![0-9A-Za-z/_-]))(?<value>(?=(?:[^\\s\\d]*\\d){3})[A-Z0-9ÁÉÍÓÖŐÚÜŰ][A-Z0-9ÁÉÍÓÖŐÚÜŰ/._-]{3,})"
     }
   }
 ]
