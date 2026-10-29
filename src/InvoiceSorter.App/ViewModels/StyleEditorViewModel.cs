@@ -427,6 +427,17 @@ public sealed class StyleEditorViewModel : ObservableObject, IDisposable
 
         IssuerResult = Describe(style.Issuer, page, "Kibocsátó", IssuerBrush, overlays);
         var rawIssuer = style.Issuer.Mode == FieldMode.Fixed ? null : InvoiceProcessor.ReadFieldWithFallback(style.Issuer, page, _settings).Value;
+        if (style.Issuer.Mode == FieldMode.Fixed && !string.IsNullOrWhiteSpace(style.Issuer.FixedValue))
+        {
+            // The fixed name is only given when the page confirms it (printed there, or its tax number).
+            var test = new InvoiceDocument { Style = style };
+            test.Pages.Add(page);
+            var issuer = InvoiceProcessor.FixedIssuer(test, _settings);
+            var name = style.Issuer.FixedValue.Trim();
+            IssuerResult = issuer == name ? $"{issuer}   (szerepel a lapon)"
+                : issuer.Length > 0 ? $"{issuer}   (az adószám alapján – „{name}” nem szerepel a lapon)"
+                : $"✖ nem adja meg: „{name}” nem szerepel a lapon";
+        }
         if (rawIssuer != null)
         {
             var clean = InvoiceProcessor.NormalizeIssuer(rawIssuer, _settings);

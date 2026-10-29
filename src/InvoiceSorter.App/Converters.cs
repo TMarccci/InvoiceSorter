@@ -212,6 +212,16 @@ public sealed class ZeroToVisibilityConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotSupportedException();
 }
 
+/// <summary>A size minus the parameter (e.g. the room left for the details above the page), at least 120.</summary>
+public sealed class SubtractConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is double size && double.TryParse(parameter as string, NumberStyles.Float, CultureInfo.InvariantCulture, out var minus)
+            ? Math.Max(120, size - minus)
+            : double.PositiveInfinity;
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotSupportedException();
+}
+
 /// <summary>Hungarian names of the enum values shown in combo boxes (field modes, label directions …).</summary>
 public sealed class EnumTextConverter : IValueConverter
 {

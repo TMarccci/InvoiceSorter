@@ -38,7 +38,7 @@ MI-alapú OCR is használható. Internet, MI-szolgáltatás vagy kredit nem kell
 - **Surya OCR** (opcionális) – a halvány, apró betűs oldalak újraolvasása helyben vagy a szerveren.
 - **Központi konfiguráció** – az Invoice Sorter szerveren a rendszergazda egy helyen kezeli a sablonokat és a
   beállításokat; a kliensek automatikusan megkapják. A szerver közös Surya OCR-t ad sorban állással.
-- **Frissítésjelzés** – a program jelzi, ha új verzió érhető el.
+- **Frissítés egy kattintással** – a program jelzi az új verziót, letölti, telepíti és újraindul.
 
 ## Telepítés
 

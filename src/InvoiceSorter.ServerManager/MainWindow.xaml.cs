@@ -24,6 +24,7 @@ public partial class MainWindow : Window
     public MainWindow(string dataDir)
     {
         InitializeComponent();
+        global::InvoiceSorter.App.WindowFit.Attach(this);
         _vm = new ManagerViewModel(dataDir);
         DataContext = _vm;
         VersionText.Text = "v" + ManagerViewModel.Version;

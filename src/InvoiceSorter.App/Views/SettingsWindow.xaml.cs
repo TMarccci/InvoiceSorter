@@ -32,6 +32,7 @@ public partial class SettingsWindow : Window
     public SettingsWindow(AppSettings settings, SettingsWindowMode mode = SettingsWindowMode.Client, string? saveCaption = null)
     {
         InitializeComponent();
+        WindowFit.Attach(this);
         _mode = mode;
         _vm = new SettingsViewModel(JsonStore.DeepClone(settings), mode);
         _vm.ConfigModeChanged += UpdateLock;

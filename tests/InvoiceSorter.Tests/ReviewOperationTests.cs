@@ -96,6 +96,73 @@ public class ReviewOperationTests
     }
 
     [Fact]
+    public void DeletingAPageRereadsTheNewFirstPageAndRestorePutsItBack()
+    {
+        var advert = FirstPage(0, "A-6");        // e.g. another company's sheet that was scanned on top
+        var invoice = FirstPage(1, "A-7");
+        var doc = Doc(advert, invoice);
+        var job = Job(doc);
+        doc.VatApproved = true;
+        Assert.Equal("A-6", doc.InvoiceNumber);
+
+        Assert.Same(doc, InvoiceProcessor.DeletePage(job, doc, advert, new[] { Alfa }, Settings()));
+        Assert.Equal(new[] { 2 }, doc.Pages.Select(p => p.Number));
+        Assert.Equal("A-7", doc.InvoiceNumber);
+        Assert.True(doc.VatApproved);            // the user's decision is kept
+        Assert.True(advert.Deleted);
+        Assert.Equal(new[] { advert }, job.DeletedPages);
+
+        Assert.Same(doc, InvoiceProcessor.RestorePage(job, advert, new[] { Alfa }, Settings()));
+        Assert.Equal(new[] { 1, 2 }, doc.Pages.Select(p => p.Number));
+        Assert.Equal("A-6", doc.InvoiceNumber);
+        Assert.False(advert.Deleted);
+        Assert.Empty(job.DeletedPages);
+        Assert.Throws<InvalidOperationException>(() => InvoiceProcessor.RestorePage(job, advert, new[] { Alfa }, Settings()));
+    }
+
+    [Fact]
+    public void DeletingTheOnlyPageRemovesTheInvoiceAndRestoreBringsItBackWithItsValues()
+    {
+        var a = Doc(FirstPage(0, "A-1"));
+        var b = Doc(FirstPage(1, "A-2"));
+        var c = Doc(FirstPage(2, "A-3"));
+        var job = Job(a, b, c);
+        b.InvoiceNumber = "A-2 (checked)";
+        var page = b.Pages[0];
+
+        Assert.Null(InvoiceProcessor.DeletePage(job, b, page, new[] { Alfa }, Settings()));
+        Assert.Equal(new[] { a, c }, job.Documents);
+        Assert.Equal(new[] { 1, 2 }, job.Documents.Select(d => d.Number));
+
+        Assert.Same(b, InvoiceProcessor.RestorePage(job, page, new[] { Alfa }, Settings()));
+        Assert.Equal(new[] { a, b, c }, job.Documents);
+        Assert.Equal(new[] { 1, 2, 3 }, job.Documents.Select(d => d.Number));
+        Assert.Equal("A-2 (checked)", b.InvoiceNumber);
+    }
+
+    [Fact]
+    public void DeletedPagesStayDeletedWhenTheInvoicesAreDetectedAgain()
+    {
+        var styles = JsonStore.LoadDefaultStyles().Append(Alfa).ToList();
+        var a = Doc(FirstPage(0, "A-1"));
+        var b = Doc(FirstPage(1, "A-2"));
+        var c = Doc(FirstPage(2, "A-3"));
+        var job = Job(a, b, c);
+        var page = b.Pages[0];
+        InvoiceProcessor.DeletePage(job, b, page, styles, Settings());
+
+        InvoiceProcessor.BuildDocuments(job, styles, Settings());
+        Assert.Equal(new[] { "A-1", "A-3" }, job.Documents.Select(d => d.InvoiceNumber));
+        Assert.DoesNotContain(job.Documents, d => d.Pages.Contains(page));
+
+        // The invoices were rebuilt: the page comes back as a new invoice at its place in the page order.
+        var restored = InvoiceProcessor.RestorePage(job, page, styles, Settings());
+        Assert.Equal(new[] { "A-1", "A-2", "A-3" }, job.Documents.Select(d => d.InvoiceNumber));
+        Assert.Equal(2, restored.Number);
+        Assert.Equal(StartReason.Manual, restored.StartReason);
+    }
+
+    [Fact]
     public void DefaultFileNameStartsWithTheInvoiceNumber()
     {
         var settings = Settings();

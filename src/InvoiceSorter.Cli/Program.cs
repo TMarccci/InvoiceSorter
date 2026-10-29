@@ -221,7 +221,11 @@ return 0;
 void Finish(InvoiceJob job)
 {
     foreach (var d in job.Documents)
+    {
         Console.WriteLine($"#{d.Number,3} p{d.PageRange,-10} {d.StatusText,-5} T{d.Trust,3} {d.StyleName,-22} {d.Issuer,-28} {d.InvoiceNumber,-22} {d.VatText,-20} {d.ErrorsText}");
+        if (args.Contains("--why"))   // the trust deductions
+            foreach (var reason in d.TrustReasons) Console.WriteLine($"       - {reason}");
+    }
     Console.WriteLine($"{job.Documents.Count} invoices, {job.Documents.Count(d => !d.HasErrors)} OK");
     var outDir = Opt("--out");
     if (outDir != null)

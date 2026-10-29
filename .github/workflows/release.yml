@@ -101,7 +101,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           v="${{ steps.version.outputs.version }}"
-          gh release create "${{ steps.version.outputs.tag }}" \
+          # "Latest" only for the highest version: a fix of an older version must not hide a newer release.
+          highest=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' '[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//' | sort -t. -k1,1n -k2,2n -k3,3n | tail -n1)
+          latest=true; [[ "$highest" != "$v" ]] && latest=false
+          echo "Highest version tag: $highest → latest=$latest"
+          gh release create "${{ steps.version.outputs.tag }}" --latest=$latest \
             "installer/client/Output/InvoiceSorter-Setup-$v.exe" \
             "installer/server/Output/InvoiceSorter-Server-Setup-$v.exe" \
             SHA256SUMS.txt \

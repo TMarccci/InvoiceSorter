@@ -43,6 +43,16 @@ public sealed class PageInfo
     public double InkRatio { get; set; }
     public string? Error { get; set; }
 
+    /// <summary>
+    /// Deleted by the user in the review screen: part of no invoice, not saved, and stays deleted when the invoices
+    /// are detected again (the source PDF is not changed). <see cref="InvoiceProcessor.RestorePage"/> brings it back.
+    /// </summary>
+    public bool Deleted { get; set; }
+
+    /// <summary>The invoice and position the page was deleted from (to put it back there).</summary>
+    public InvoiceDocument? DeletedFrom { get; set; }
+    public int DeletedIndex { get; set; }
+
     private List<OcrTextLine> _lines = new();
 
     public List<OcrTextLine> Lines
@@ -253,6 +263,7 @@ public sealed class InvoiceDocument : ObservableObject
         ["split"] = "szétvágva", ["merged"] = "összevonva", ["style"] = "sablon", ["page order"] = "oldalsorrend",
         ["page rotated"] = "oldal elforgatva", ["issue date"] = "kiállítás dátuma", ["fulfillment date"] = "teljesítés dátuma",
         ["due date"] = "fizetési határidő", ["dates accepted"] = "dátumok elfogadva",
+        ["page deleted"] = "oldal törölve", ["page restored"] = "oldal visszaállítva",
     };
 
     public bool IsManuallyEdited => _edits.Count > 0;
@@ -421,6 +432,9 @@ public sealed class InvoiceJob
     public Processing.ReceiverDetection? Detection { get; set; }
     public List<PageInfo> Pages { get; } = new();
     public ObservableCollection<InvoiceDocument> Documents { get; } = new();
+
+    /// <summary>Pages the user deleted in the review screen (in page order).</summary>
+    public IReadOnlyList<PageInfo> DeletedPages => Pages.Where(p => p.Deleted).ToList();
 
     /// <summary>How long each step of the processing took ("Reading pages (OCR)", "Splitting and reading", "Re-reading" …).</summary>
     public List<(string Step, TimeSpan Duration)> Timings { get; } = new();

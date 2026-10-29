@@ -135,7 +135,7 @@ public static class VatValidator
         return false;
     }
 
-    private static string StripCompanyForm(string name) =>
+    internal static string StripCompanyForm(string name) =>
         Regex.Replace(name, @"\b(kft|zrt|nyrt|bt|kkt|ltd|gmbh)\b\.?", "", RegexOptions.IgnoreCase).Trim();
 
     private static string MapDigits(string s)

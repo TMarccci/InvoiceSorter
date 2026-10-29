@@ -320,7 +320,7 @@
                                 <Run Text="{Binding ErrorCount, Mode=OneWay}" FontWeight="SemiBold" Foreground="#DC2626" /><Run Text=" hibás  ·  " />
                                 <Run Text="{Binding ExcludedCount, Mode=OneWay}" Foreground="#6B7280" /><Run Text=" kizárva  ·  " Foreground="#6B7280" />
                                 <Run Text="{Binding EditedCount, Mode=OneWay}" Foreground="#B45309" /><Run Text=" kézzel módosítva  ·  " Foreground="#B45309" />
-                                <Run Text="{Binding PageCount, Mode=OneWay}" /><Run Text=" oldal (" /><Run Text="{Binding BlankCount, Mode=OneWay}" /><Run Text=" üres)" />
+                                <Run Text="{Binding PageCount, Mode=OneWay}" /><Run Text=" oldal (" /><Run Text="{Binding BlankCount, Mode=OneWay}" /><Run Text=" üres" /><Run Text="{Binding DeletedPagesText, Mode=OneWay}" /><Run Text=")" />
                             </TextBlock>
                             <Border Background="#F1F5F9" CornerRadius="10" Padding="8,2" Margin="12,0,0,0" VerticalAlignment="Center"
                                     ToolTip="{Binding ProcessingTimeDetails}" Visibility="{Binding ProcessingTimeText, Converter={StaticResource NullToVis}}">
@@ -457,11 +457,18 @@
                             <Grid DataContext="{Binding SelectedDocument}" Visibility="{Binding Converter={StaticResource NullToVis}}">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
                                     <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <!-- On a small screen the details scroll, so that the page itself stays visible (at least 280 px). -->
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0"
+                                              MaxHeight="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=Grid}, Converter={StaticResource Subtract}, ConverterParameter=280}">
+                                <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
                                 <TextBlock FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8">
@@ -691,6 +698,16 @@
                                             <Button Style="{StaticResource ActionButton}" Tag="&#xE7AD;" Content="Forgatás jobbra"
                                                     Command="{Binding DataContext.RotateRightCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                     ToolTip="A kijelölt oldal 90°-kal jobbra fordul – újraolvassa, és elforgatva menti" />
+                                            <Button Style="{StaticResource ActionButton}" Tag="&#xE74D;" Content="Oldal törlése"
+                                                    Command="{Binding DataContext.DeletePageCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    ToolTip="A kijelölt oldal kikerül a számlából, és nem kerül mentésre (pl. reklám, kétszer beszkennelt lap). Billentyű: Delete a bélyegképeken. Visszaállítható." />
+                                            <Button Style="{StaticResource ActionButton}" Tag="&#xE777;" Click="RestorePages_Click"
+                                                    Visibility="{Binding DataContext.HasDeletedPages, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"
+                                                    ToolTip="A törölt oldalak listája – a kiválasztott oldal visszakerül oda, ahonnan törölted">
+                                                <TextBlock TextAlignment="Center">
+                                                    <Run Text="Törölt oldalak" /><LineBreak /><Run Text="(" /><Run Text="{Binding DataContext.DeletedPageCount, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}" /><Run Text=")…" />
+                                                </TextBlock>
+                                            </Button>
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Margin="0,0,14,0">
@@ -727,16 +744,19 @@
                                     </StackPanel>
                                 </WrapPanel>
 
+                                </Grid>
+                                </ScrollViewer>
+
                                 <!-- Pages of the invoice (left) and the selected page (right) -->
-                                <Grid Grid.Row="4" Grid.RowSpan="2">
+                                <Grid Grid.Row="1">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="96" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
                                 <ListBox x:Name="PagesList" ItemsSource="{Binding Pages}" Margin="0,0,8,0" Padding="0" AllowDrop="True"
                                          PreviewMouseLeftButtonDown="PagesList_PreviewMouseLeftButtonDown" PreviewMouseMove="PagesList_PreviewMouseMove"
-                                         DragOver="PagesList_DragOver" Drop="PagesList_Drop"
-                                         ToolTip="Húzd az oldalakat a sorrend módosításához"
+                                         DragOver="PagesList_DragOver" Drop="PagesList_Drop" KeyDown="PagesList_KeyDown"
+                                         ToolTip="Húzd az oldalakat a sorrend módosításához · Delete: a kijelölt oldal törlése"
                                          SelectedItem="{Binding DataContext.SelectedPage, RelativeSource={RelativeSource AncestorType=Window}}"
                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
                                     <ListBox.ItemContainerStyle>

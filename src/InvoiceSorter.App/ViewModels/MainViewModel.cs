@@ -70,6 +70,8 @@ public sealed class MainViewModel : ObservableObject
         MergeWithPreviousCommand = new RelayCommand(MergeWithPrevious, () => SelectedDocument != null && Job != null && Job.Documents.IndexOf(SelectedDocument) > 0);
         MovePageUpCommand = new RelayCommand(() => MoveSelectedPage(-1), () => CanMoveSelectedPage(-1));
         MovePageDownCommand = new RelayCommand(() => MoveSelectedPage(+1), () => CanMoveSelectedPage(+1));
+        DeletePageCommand = new RelayCommand(() => DeleteSelectedPage(),
+            () => Job != null && SelectedDocument != null && SelectedPage != null && SelectedDocument.Pages.Contains(SelectedPage) && !_rotating && !IsBusy);
         RotateLeftCommand = new AsyncRelayCommand(() => RotateSelectedPageAsync(270), () => SelectedPage != null && !_rotating && !IsBusy);
         RotateRightCommand = new AsyncRelayCommand(() => RotateSelectedPageAsync(90), () => SelectedPage != null && !_rotating && !IsBusy);
         NextErrorCommand = new RelayCommand(NextError, () => Job != null && Job.Documents.Any(d => d.HasErrors));
@@ -490,6 +492,12 @@ public sealed class MainViewModel : ObservableObject
     public int PageCount => Job?.Pages.Count ?? 0;
     public int BlankCount => Job?.Pages.Count(p => p.IsBlank) ?? 0;
 
+    /// <summary>Pages deleted in the review screen (they can be restored from the "Törölt oldalak" menu).</summary>
+    public IReadOnlyList<PageInfo> DeletedPages => Job?.DeletedPages ?? Array.Empty<PageInfo>();
+    public int DeletedPageCount => DeletedPages.Count;
+    public bool HasDeletedPages => DeletedPageCount > 0;
+    public string DeletedPagesText => DeletedPageCount > 0 ? $", {DeletedPageCount} törölve" : "";
+
     public InvoiceDocument? SelectedDocument
     {
         get => _selectedDocument;
@@ -574,6 +582,7 @@ public sealed class MainViewModel : ObservableObject
     public IRelayCommand MergeWithPreviousCommand { get; }
     public IRelayCommand MovePageUpCommand { get; }
     public IRelayCommand MovePageDownCommand { get; }
+    public IRelayCommand DeletePageCommand { get; }
     public IAsyncRelayCommand RotateLeftCommand { get; }
     public IAsyncRelayCommand RotateRightCommand { get; }
     public IRelayCommand NextErrorCommand { get; }
@@ -592,7 +601,7 @@ public sealed class MainViewModel : ObservableObject
         foreach (var c in new IRelayCommand[]
                  {
                      BrowseSourceCommand, StartCommand, CancelCommand, RerunDetectionCommand, RereadDocumentCommand, SplitHereCommand,
-                     MergeWithPreviousCommand, MovePageUpCommand, MovePageDownCommand, RotateLeftCommand, RotateRightCommand, NextErrorCommand, GoToSaveCommand, BackToReviewCommand, BrowseOutputCommand, SaveCommand,
+                     MergeWithPreviousCommand, MovePageUpCommand, MovePageDownCommand, DeletePageCommand, RotateLeftCommand, RotateRightCommand, NextErrorCommand, GoToSaveCommand, BackToReviewCommand, BrowseOutputCommand, SaveCommand,
                      OpenOutputFolderCommand, NewJobCommand,
                  })
             c?.NotifyCanExecuteChanged();
@@ -950,6 +959,60 @@ public sealed class MainViewModel : ObservableObject
         SelectedPage = page;
     }
 
+    /// <summary>
+    /// Deletes the selected page (after asking): it is not saved and stays deleted when the invoices are detected
+    /// again. An invoice that loses its only page is removed. The "Törölt oldalak" menu brings it back.
+    /// </summary>
+    public void DeleteSelectedPage(bool ask = true)
+    {
+        if (Job == null || SelectedDocument == null || SelectedPage == null) return;
+        var doc = SelectedDocument;
+        var page = SelectedPage;
+        int pageIndex = doc.Pages.IndexOf(page);
+        int docIndex = Job.Documents.IndexOf(doc);
+        if (pageIndex < 0) return;
+
+        bool onlyPage = doc.Pages.Count == 1;
+        var question = onlyPage
+            ? $"A(z) {page.Number}. oldal a(z) #{doc.Number} számla egyetlen oldala: az oldallal együtt a számla is törlődik a listából, és nem kerül mentésre.\n\n" +
+              "Ha csak a mentésből hagynád ki, használd inkább a Kizárás gombot.\n\nAz eredeti szkennelt PDF nem változik; a törölt oldal a „Törölt oldalak” gombbal visszaállítható."
+            : $"Törlöd a(z) {page.Number}. oldalt a(z) #{doc.Number} számlából? Nem kerül mentésre.\n\n" +
+              "Az eredeti szkennelt PDF nem változik; a törölt oldal a „Törölt oldalak” gombbal visszaállítható.";
+        var answer = !ask ? MessageBoxResult.Yes : MessageBox.Show(Application.Current.MainWindow!, question, onlyPage ? "Oldal és számla törlése" : "Oldal törlése",
+            MessageBoxButton.YesNo, MessageBoxImage.Question, onlyPage ? MessageBoxResult.No : MessageBoxResult.Yes);
+        if (answer != MessageBoxResult.Yes) return;
+
+        InvoiceDocument? kept = null;
+        RunProgrammatic(() => kept = InvoiceProcessor.DeletePage(Job, doc, page, Styles.ToList(), JobSettings));
+        // Select the neighbouring page (or invoice) first: the suggestions and overlays must not use the removed one.
+        var next = kept ?? (Job.Documents.Count == 0 ? null : Job.Documents[Math.Clamp(docIndex, 0, Job.Documents.Count - 1)]);
+        kept?.MarkEdited("page deleted");
+        SelectedDocument = next;
+        if (kept != null) SelectedPage = kept.Pages[Math.Min(pageIndex, kept.Pages.Count - 1)];
+        AfterDocumentEdit();
+        SelectedDocument = next;
+    }
+
+    /// <summary>Text of a deleted page in the "Törölt oldalak" menu: where restoring puts it.</summary>
+    public string RestoreTargetText(PageInfo page) =>
+        page.DeletedFrom is { } doc && Job?.Documents.Contains(doc) == true
+            ? $"{page.Number}. oldal  ·  vissza a #{doc.Number} számlába ({doc.PageRange}. o.)"
+            : page.DeletedFrom is { Pages.Count: 0 } removed
+                ? $"{page.Number}. oldal  ·  a törölt számla visszaállítása ({(string.IsNullOrWhiteSpace(removed.InvoiceNumber) ? "számlaszám nélkül" : removed.InvoiceNumber)})"
+                : $"{page.Number}. oldal  ·  új számlaként";
+
+    /// <summary>Brings a deleted page back (see <see cref="InvoiceProcessor.RestorePage"/>) and selects it.</summary>
+    public void RestoreDeletedPage(PageInfo page)
+    {
+        if (Job == null || !page.Deleted) return;
+        InvoiceDocument doc = null!;
+        RunProgrammatic(() => doc = InvoiceProcessor.RestorePage(Job, page, Styles.ToList(), JobSettings));
+        doc.MarkEdited("page restored");
+        AfterDocumentEdit();
+        SelectedDocument = doc;
+        SelectedPage = page;
+    }
+
     private bool _rotating;
 
     /// <summary>
@@ -1130,6 +1193,10 @@ public sealed class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(OkCount));
         OnPropertyChanged(nameof(PageCount));
         OnPropertyChanged(nameof(BlankCount));
+        OnPropertyChanged(nameof(DeletedPages));
+        OnPropertyChanged(nameof(DeletedPageCount));
+        OnPropertyChanged(nameof(DeletedPagesText));
+        OnPropertyChanged(nameof(HasDeletedPages));
         OnPropertyChanged(nameof(ProcessingTimeText));
         OnPropertyChanged(nameof(ProcessingTimeDetails));
         NextErrorCommand?.NotifyCanExecuteChanged();

@@ -436,6 +436,7 @@ public static class FieldReader
             double firstY = below.Min(w => w.CenterY);
             var line = all.Where(w => Math.Abs(w.CenterY - firstY) < lineH * 0.6).OrderBy(w => w.X).ToList();
             var seed = below.Where(w => Math.Abs(w.CenterY - firstY) < lineH * 0.6).ToList();
+            if (IsNextKeyValueRow(line, lb)) return new List<OcrWordBox>();
 
             // ...extended left and right along that line while the words are close together
             // (the value may start left of the label, e.g. a centered column heading).
@@ -445,6 +446,33 @@ public static class FieldReader
             while (hi < line.Count - 1 && line[hi + 1].X - (line[hi].X + line[hi].W) < maxGap) hi++;
             return line.GetRange(lo, hi - lo + 1);
         }
+    }
+
+    /// <summary>
+    /// The line under a label is the next row of a key–value block, not the label's value: it starts in the label's
+    /// column with words without digits (another label, e.g. "Vevőszám" under "Számlaszám" whose own value the OCR
+    /// missed) and its value follows after a gap. Taking it would give the customer number as the invoice number.
+    /// </summary>
+    private static bool IsNextKeyValueRow(List<OcrWordBox> line, NormRect label)
+    {
+        // The keys of such a block are aligned exactly; a company name under a heading is often indented.
+        int i = line.FindIndex(w => Math.Abs(w.X - label.X) < 0.006);
+        if (i < 0 || line[i].Text.Any(char.IsDigit) || TextUtil.Compact(line[i].Text).Length < 3) return false;
+        while (i + 1 < line.Count && line[i + 1].X - (line[i].X + line[i].W) < 0.025)
+        {
+            if (line[i + 1].Text.Any(char.IsDigit)) return false;
+            i++;
+        }
+        // "Minta Kft." is a value (a name), not a key.
+        var key = line.Where(w => w.X >= label.X - 0.006 && w.X + w.W <= line[i].X + line[i].W + 0.001).Select(w => TextUtil.Compact(w.Text));
+        if (key.Any(k => k is "kft" or "zrt" or "nyrt" or "bt" or "kkt" or "ev" or "ltd" or "gmbh")) return false;
+        // A key column and a value column: the other label ends about where ours does, its value starts just right of
+        // ours. (Not a heading over "Név:  Minta Kft.", where the value starts under the heading, and not a name under
+        // a heading with the next column of the page – the buyer block – far to the right.)
+        if (i + 1 >= line.Count) return false;
+        double labelEnd = label.X + label.W, valueX = line[i + 1].X;
+        return line[i].X + line[i].W < labelEnd + 0.03 && valueX - (line[i].X + line[i].W) >= 0.04 &&
+               valueX > labelEnd + 0.01 && valueX < labelEnd + 0.15;
     }
 
     /// <summary>The words of the line directly under <paramref name="firstLine"/>, in the same column.</summary>

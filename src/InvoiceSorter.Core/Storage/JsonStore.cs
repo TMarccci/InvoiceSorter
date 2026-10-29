@@ -38,7 +38,7 @@ public static class JsonStore
     }
 
     /// <summary>Version of the built-in styles shipped in DefaultStyles.json. Increase when they change.</summary>
-    public const int BuiltInStylesVersion = 9;
+    public const int BuiltInStylesVersion = 10;
 
     // Company-name filter of the built-in styles, in its successive versions (the last one is current).
     private const string CompanyV1 = @"^(?<value>.{2,}?\b(?:K\s?[fti1l]\s?[ti1l]|Z\s?[rt]\s?t|N\s?y\s?r\s?t|B\s?t|K\s?k\s?t)\b\.?)";

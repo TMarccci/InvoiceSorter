@@ -73,19 +73,104 @@ public static class TextUtil
     }
 
     /// <summary>
-    /// OCR-tolerant "contains". The whole text must be found with the allowed number of errors, and every word of
-    /// 4+ characters must also be found on its own with its own (smaller) allowance - otherwise the errors could all
-    /// fall on the one distinctive word ("METRO KERESKEDELMI KFT" would match "… ÉS KERESKEDELMI KFT").
+    /// OCR-tolerant "contains". The whole text must be found with the allowed number of errors, and inside that match
+    /// every word of 4+ characters must keep to its own (smaller) allowance – otherwise the errors could all fall on
+    /// the one distinctive word: "METRO KERESKEDELMI KFT" matched "Vasalatkereskedelmi Kft" (4 errors, all on
+    /// "METRO") when the word was looked for anywhere else on the page ("Internet to" → "metto").
     /// </summary>
     public static bool FuzzyContainsText(string compactHaystack, string text, double tolerance)
     {
         var needle = Compact(text);
         if (needle.Length == 0) return false;
-        if (!FuzzyContains(compactHaystack, needle, AllowedErrors(needle.Length, tolerance))) return false;
+        if (compactHaystack.Contains(needle, StringComparison.Ordinal)) return true;
+        int maxErrors = AllowedErrors(needle.Length, tolerance);
+        if (!FuzzyContains(compactHaystack, needle, maxErrors)) return false;
 
-        var words = Regex.Split(text, @"[^\p{L}\p{Nd}]+").Select(Compact).Where(w => w.Length >= 4).ToList();
-        if (words.Count <= 1) return true;
-        return words.All(w => FuzzyContains(compactHaystack, w, AllowedErrors(w.Length, tolerance)));
+        // Where each word of the text lies in the compact needle.
+        var words = new List<(int Start, int Length)>();
+        int at = 0;
+        foreach (var w in Regex.Split(text, @"[^\p{L}\p{Nd}]+").Select(Compact).Where(w => w.Length > 0))
+        {
+            words.Add((at, w.Length));
+            at += w.Length;
+        }
+        if (at != needle.Length) return true;   // unusual characters: the whole-text check has to do
+        var checkedWords = words.Where(w => w.Length >= 4).ToList();
+        if (words.Count <= 1 || checkedWords.Count == 0) return true;
+
+        foreach (int end in MatchEnds(compactHaystack, needle, maxErrors))
+        {
+            var errors = WordErrors(compactHaystack, needle, end, maxErrors, words);
+            // Per word a little more than its share (at least 1): "szałnlazz.hu" (m → łn) and "Ellerdrző" are real OCR
+            // errors of "szamlazz.hu" and "Ellenőrző"; "salat" for "METRO" (4 of 5 letters) is another word.
+            if (errors != null && checkedWords.All(w => errors[words.IndexOf(w)] <= Math.Max(1, (int)Math.Ceiling(w.Length * tolerance)))) return true;
+        }
+        return false;
+    }
+
+    /// <summary>The haystack positions (last character) where the needle ends with at most <paramref name="maxErrors"/> errors.</summary>
+    private static IEnumerable<int> MatchEnds(string haystack, string needle, int maxErrors)
+    {
+        int m = needle.Length;
+        var prev = new int[m + 1];
+        var cur = new int[m + 1];
+        for (int i = 0; i <= m; i++) prev[i] = i;
+        for (int j = 0; j < haystack.Length; j++)
+        {
+            cur[0] = 0;
+            for (int i = 1; i <= m; i++)
+            {
+                int cost = needle[i - 1] == haystack[j] ? 0 : 1;
+                cur[i] = Math.Min(Math.Min(prev[i - 1] + cost, prev[i] + 1), cur[i - 1] + 1);
+            }
+            if (cur[m] <= maxErrors) yield return j;
+            (prev, cur) = (cur, prev);
+        }
+    }
+
+    /// <summary>
+    /// Aligns the needle with the haystack text that ends at <paramref name="end"/> and counts the errors falling on each
+    /// word (a missing or wrong letter of the word, or an extra letter inside it). Null when there is no such alignment.
+    /// </summary>
+    private static int[]? WordErrors(string haystack, string needle, int end, int maxErrors, List<(int Start, int Length)> words)
+    {
+        int m = needle.Length;
+        int start = Math.Max(0, end - m - maxErrors + 1);
+        var window = haystack.AsSpan(start, end - start + 1);
+        int n = window.Length;
+        var d = new int[m + 1, n + 1];
+        for (int i = 0; i <= m; i++) d[i, 0] = i;
+        for (int j = 0; j <= n; j++) d[0, j] = 0;
+        for (int i = 1; i <= m; i++)
+            for (int j = 1; j <= n; j++)
+                d[i, j] = Math.Min(Math.Min(d[i - 1, j - 1] + (needle[i - 1] == window[j - 1] ? 0 : 1), d[i - 1, j] + 1), d[i, j - 1] + 1);
+        if (d[m, n] > maxErrors) return null;
+
+        int WordOf(int needleIndex) => words.FindIndex(w => needleIndex >= w.Start && needleIndex < w.Start + w.Length);
+        var errors = new int[words.Count];
+        int a = m, b = n;
+        while (a > 0 && b > 0)
+        {
+            if (d[a, b] == d[a - 1, b - 1] + (needle[a - 1] == window[b - 1] ? 0 : 1))
+            {
+                if (needle[a - 1] != window[b - 1]) errors[WordOf(a - 1)]++;
+                a--; b--;
+            }
+            else if (d[a, b] == d[a - 1, b] + 1)
+            {
+                errors[WordOf(a - 1)]++;   // a letter of the word is missing
+                a--;
+            }
+            else
+            {
+                // An extra letter: it counts for the word only when it stands inside it, not between two words.
+                int left = WordOf(a - 1);
+                if (a < m && left == WordOf(a)) errors[left]++;
+                b--;
+            }
+        }
+        while (a > 0) errors[WordOf(--a)]++;
+        return errors;
     }
 
     /// <summary>

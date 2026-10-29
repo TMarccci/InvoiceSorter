@@ -19,6 +19,7 @@ public sealed class OcrTextWindow : Window
         Height = 820;
         MinWidth = 400;
         MinHeight = 300;
+        WindowFit.Attach(this);
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         Background = (Brush)Application.Current.Resources["PageBackground"];
 

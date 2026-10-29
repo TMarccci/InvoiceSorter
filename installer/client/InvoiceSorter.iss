@@ -3,7 +3,7 @@
 ; A kiadott (single-file) exe helye: ..\..\publish\client\InvoiceSorter.exe  (felülírható: /DClientExe=<útvonal>)
 
 #ifndef AppVersion
-  #define AppVersion "1.3.0"
+  #define AppVersion "1.4.0"
 #endif
 #ifndef ClientExe
   #define ClientExe "..\..\publish\client\InvoiceSorter.exe"
@@ -79,6 +79,8 @@ Root: HKLM; Subkey: "Software\Classes\.pdf\OpenWithList\InvoiceSorter.exe"; Flag
 
 [Run]
 Filename: "{app}\InvoiceSorter.exe"; Description: "{#AppName} indítása"; Flags: nowait postinstall skipifsilent
+; Frissítés a programból (csendes telepítés): a régi példány bezárult, az új magától indul – a bejelentkezett felhasználóként.
+Filename: "{app}\InvoiceSorter.exe"; Flags: nowait runasoriginaluser; Check: WizardSilent
 
 ; A felhasználók adatai (%APPDATA%\InvoiceSorter: beállítások, sablonok; %LOCALAPPDATA%\InvoiceSorter: napló, Surya)
 ; eltávolításkor megmaradnak – egy újratelepítés ugyanott folytatja.

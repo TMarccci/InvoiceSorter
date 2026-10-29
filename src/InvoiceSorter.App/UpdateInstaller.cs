@@ -24,7 +24,8 @@ public static class UpdateInstaller
         }
         var answer = MessageBox.Show(owner,
             $"Elérhető: {what} {release.Version}.\n\nLetölti és telepíti most? ({asset.Size / 1024.0 / 1024.0:0} MB)\n\n" +
-            "A program bezárul, a telepítő rendszergazdai jóváhagyást kér. A beállítások és a sablonok megmaradnak.\n\n" +
+            "A Windows rendszergazdai jóváhagyást kér, a program bezárul, és a telepítés után magától újraindul. " +
+            "A beállítások és a sablonok megmaradnak.\n\n" +
             "Nem = a kiadás oldalának megnyitása (újdonságok).",
             "Frissítés", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
         if (answer == MessageBoxResult.No) Process.Start(new ProcessStartInfo(release.Url) { UseShellExecute = true });

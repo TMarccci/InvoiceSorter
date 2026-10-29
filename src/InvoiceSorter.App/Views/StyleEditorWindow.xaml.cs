@@ -23,6 +23,7 @@ public partial class StyleEditorWindow : Window
                              bool readOnly = false, string? saveCaption = null)
     {
         InitializeComponent();
+        WindowFit.Attach(this);
         _vm = new StyleEditorViewModel(styles, settings, job, startPage, createNew && !readOnly);
         DataContext = _vm;
         Viewer.RegionDrawn += (_, rect) => _vm.OnRegionDrawn(rect);

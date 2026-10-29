@@ -48,7 +48,7 @@ Fontosabb Core-osztályok:
 | Osztály | Feladat |
 |---|---|
 | `PageAnalyzer` | PDF-oldalak renderelése, OCR, üres oldalak, forgatás; a `ProgressInfo` állapotnevei |
-| `InvoiceProcessor` | a teljes futás (`RunAsync`), szétbontás (`BuildDocuments`), olvasás, duplikátumok, javaslatok, kibocsátónév tanulása |
+| `InvoiceProcessor` | a teljes futás (`RunAsync`), szétbontás (`BuildDocuments`), olvasás, duplikátumok, javaslatok, kibocsátónév tanulása; kézi műveletek: `SplitAt`, `MergeInto`, `MovePage`, `DeletePage` / `RestorePage` (a törölt oldal `PageInfo.Deleted`, a `BuildDocuments` kihagyja) |
 | `FieldReader` | sablon felismerése (`FindStyle`, `MatchScore`) és mezők olvasása (fix / terület / címke / regex) |
 | `PageRefiner` | a hiányos számlák újraolvasása (nagyítás, nyelv, expozíció, Surya) |
 | `DateReader` | a három dátum: dátumkeresés (formátumok, OCR-javítás, időszakok), címkék a sorban és oszlopfejlécként, döntés az olvasatok között, egydátumos szabály, ellenőrzések, javaslatok |
@@ -103,6 +103,29 @@ InvoiceSorterServerManager.exe --data D:\proba\szerver --screenshots D:\kepek
 
 A felület a `ProgressInfo.Stage` konstansai alapján váltja a varázsló lépéseit – új lépésnévnél a konstansokat
 használd, ne szövegösszehasonlítást.
+
+## Felismerési szabályok (pontosság)
+
+- **Fuzzy szövegegyezés** (`TextUtil.FuzzyContainsText`): az egész szöveg legfeljebb `FuzzyTolerance` (20 %) hibával,
+  és az illesztésen *belül* minden 4+ betűs szó legfeljebb `ceil(hossz × 20 %)` (min. 1) hibával. Így a
+  „Vasalatkereskedelmi Kft” nem lesz „METRO KERESKEDELMI KFT” (a 4 hiba mind a „METRO”-ra esett), a valódi OCR-hibák
+  („szałnlazz.hu”, „Ellerdrző”) viszont egyeznek.
+- **Állandó kibocsátó** (`InvoiceProcessor.FixedIssuer`): a sablon `Fixed` neve csak akkor kerül be, ha a lap igazolja
+  (a név szerepel bármely olvasatban, vagy a szállító adószáma ehhez a céghez tartozik); különben az adószám cége vagy
+  üres, `FixedIssuerNotOnPageNote` jegyzettel és −15 ponttal.
+- **Oldalszámláló** (`PageCounterOf`: „Oldal 2”, „Oldal: 2/3”, „Oldalszám 1/4”): a következő oldal folytatás, ha
+  azonos a sablon, vagy az előző számláló közvetlenül előtte van (összeggel azonos összeggel, összeg nélkül összeg
+  nélkül; a közbeeső, számláló nélküli ÁSZF-lap nem szakítja meg) – kivéve, ha a számlában már van ilyen oldal, vagy
+  a lapon más számlaszám olvasható (fordított sorrendben szkennelt köteg: „2/2”, „1/2” | „2/2”, „1/2”).
+- **Kulcs–érték blokk** (`FieldReader.IsNextKeyValueRow`): a címke alatti sor nem érték, ha a címke oszlopában egy
+  másik címkével kezdődik, és az értéke közvetlenül a címkénk jobb oldalán áll („Számlaszám” alatt „Vevőszám 765432”).
+  Cégnév (Kft., Zrt. …) nem kulcs.
+- **Számlaszám a többi oldalról** (`InvoiceNumberOf`): ha egy későbbi oldal a teljes számot mutatja, amelynek az első
+  oldalé csak egy része („45678” ⊂ „412345678”), a teljes nyer.
+
+Regressziós ellenőrzéshez: `InvoiceSorter.Cli process <pdf>` egyszer (OCR + újraolvasások → `pages.json`), utána
+`reprocess <workDir> --no-refine [--why]` a régi és az új builddel, és a kimenetek összevetése (`--why`: a
+megbízhatósági levonások is).
 
 ## Dátumok (DateReader)
 
@@ -227,12 +250,16 @@ pwsh scripts/build-server.ps1 -Version 1.2.3     # publish/server/*.exe + instal
   - *Actions › Release › Run workflow* (`patch` / `minor` / `major`): a workflow maga készíti el a következő címkét.
 
   A kiadás csatolmányai: `InvoiceSorter-Setup-x.y.z.exe`, `InvoiceSorter-Server-Setup-x.y.z.exe`, `SHA256SUMS.txt`.
-- A kliens az `UpdateChecker`-rel a `releases/latest` végpontot kérdezi; a címke verzióját a futó program
-  `AssemblyInformationalVersion`-jével veti össze. Ezért a kiadás ne legyen *pre-release*, és a címke
-  `x.y.z` / `vx.y.z` alakú legyen. A kliens és a szerverkezelő frissítés gombja (`UpdateInstaller`) a kiadás
-  csatolmányai közül a nevük alapján választja ki a telepítőt (`InvoiceSorter-Setup-` / `InvoiceSorter-Server-Setup-`),
-  letölti a `%TEMP%\InvoiceSorter-update` mappába, elindítja, és bezárja a programot – a csatolmányok nevét ne
-  változtasd meg.
+- A kliens az `UpdateChecker`-rel a kiadások listáját kérdezi (`releases?per_page=30`), és a **legmagasabb
+  verziót** választja (nem a GitHub „latest” jelölését: egy régebbi verzió később kiadott javítása – pl. 1.2.1 a 1.3.0
+  után – különben elrejtené az újat); a vázlatok és a *pre-release*-ek kimaradnak. A címke `x.y.z` / `vx.y.z` alakú
+  legyen; a futó program `AssemblyInformationalVersion`-jével veti össze. A release workflow is csak a legmagasabb
+  verziót jelöli „latest”-nek (`gh release create --latest=true|false`).
+- A kliens és a szerverkezelő frissítés gombja (`UpdateInstaller`) a csatolmányok közül a nevük alapján választja ki a
+  telepítőt (`InvoiceSorter-Setup-` / `InvoiceSorter-Server-Setup-`), letölti a `%TEMP%\InvoiceSorter-update`
+  mappába, és `/SILENT /SP- /SUPPRESSMSGBOXES /NOCANCEL /NORESTART /CLOSEAPPLICATIONS` kapcsolókkal indítja; csendes
+  telepítés után az Inno Setup `[Run]` szakasza (`Check: WizardSilent`) újraindítja a klienst (a bejelentkezett
+  felhasználóként) / a szerverkezelőt. A csatolmányok nevét ne változtasd meg.
 
 ## Arculat
 

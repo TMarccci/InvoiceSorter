@@ -23,9 +23,14 @@ Ez az útmutató a kliensprogram használatát írja le. A szerver telepítésé
 2. Futtasd (rendszergazdai jóváhagyást kér). A program a `C:\Program Files\TMarccci\InvoiceSorter` mappába kerül,
    és megjelenik a Start menüben. Igény szerint asztali ikont és a PDF-ek *Társítás* menüjébe bejegyzést is készít.
 3. **Frissítés:** ha új verzió jelenik meg, a program fejlécében egy lila **„Új verzió érhető el”** gomb jelenik meg.
-   Erre kattintva a program letölti és elindítja az új telepítőt, majd bezárul (a *Nem* gombbal csak a kiadás
-   oldala nyílik meg). A beállítások és a sablonok megmaradnak. (A jelzés a *Beállítások › Konfiguráció* oldalon
-   kikapcsolható.)
+   Egy kattintás: a program letölti a telepítőt, a Windows rendszergazdai jóváhagyást kér, a program bezárul, a
+   telepítés ablak nélkül (csak egy folyamatjelzővel) lefut, és az új verzió magától elindul. A *Nem* gombbal csak
+   a kiadás oldala nyílik meg. A beállítások és a sablonok megmaradnak. (A jelzés a *Beállítások › Konfiguráció*
+   oldalon kikapcsolható.) Kézzel letölteni nem kell.
+
+**Kis képernyőn:** az **F12** (vagy F11) teljes képernyőre vált – címsor és tálca nélkül –, újra megnyomva vissza.
+Ha az ablak nagyobb lenne a képernyőnél, a program teljes méretben nyílik meg, és az ellenőrző képernyőn a számla
+adatai görgethetők, hogy az oldal képe mindig látsszon.
 
 Az eltávolítás (*Gépház › Alkalmazások*) a felhasználói adatokat (beállítások, sablonok, napló) nem törli.
 
@@ -74,7 +79,7 @@ Lehetséges hibák:
 |---|---|
 | *Kibocsátó nem található* / *Számlaszám nem található* | írd be, vagy kattints egy javaslatra a mező alatt |
 | *A vevő adószáma nem található / hibás* | nézd meg az oldalt; ha rendben van: **Adószám elfogadva** |
-| *Duplikátum* | ugyanaz a lap kétszer: **Kizárás**; ha tényleg két számla: **Duplikátum megtartása** |
+| *Duplikátum* | ugyanaz a lap kétszer: **Kizárás** (vagy a felesleges oldal: **Oldal törlése**); ha tényleg két számla: **Duplikátum megtartása** |
 | *Nem számla? Az oldal címe: „Szállítólevél”* | **Összevonás az előzővel** / **Összevonás…**, **Kizárás**, vagy **Ez számla** |
 | *Alacsony megbízhatóság* | ellenőrizd a kibocsátót és a számlaszámot (csak ha a Beállításokban hibának számít) |
 | *Hiányzó dátum* / *Nem dönthető el egyértelműen* | írd be a dátumot, vagy kattints egy javaslatra a mező alatt – lásd [Dátumok](#dátumok) |
@@ -94,6 +99,8 @@ név). Egy kattintással átveheted őket; a forrás az egérmutató alatt láts
 | | **Oldal fel / le** | az oldal sorrendjének módosítása (a bélyegképek húzásával is megy) |
 | | **OCR-szöveg** | az oldalról kiolvasott teljes szöveg, olvasatonként külön fülön |
 | | **Forgatás balra / jobbra** | elforgatja és újraolvassa az oldalt; elforgatva menti |
+| | **Oldal törlése** | a kijelölt oldal kikerül a számlából, és nem kerül mentésre (reklám, kétszer beszkennelt lap, oda nem való oldal); a bélyegképen a *Delete* billentyű is jó. Ha a számla egyetlen oldala, a számla is törlődik – ha csak kihagynád a mentésből, inkább a **Kizárás** kell. A törölt oldal az *Újrafelismerés* után is törölve marad; az eredeti PDF nem változik |
+| | **Törölt oldalak (N)…** | csak ha van törölt oldal: a választott oldal visszakerül oda, ahonnan törölted (ha a számlák azóta újra lettek bontva, új számlaként, a helyén) |
 | Számla | **Összevonás az előzővel**, **Összevonás…** | az oldalakat az előző / bármelyik másik számlához fűzi |
 | | **Újraolvasás** | a kiválasztott sablonnal újraolvassa a számlát |
 | | **Új sablon…** | sablon készítése a kijelölt oldalból |
@@ -160,7 +167,7 @@ számlaszám. Megnyitás: **Sablonok…** a fejlécben, vagy **Új sablon…** a
 | Rész | Jelentés |
 |---|---|
 | **1. Az első oldal felismerése** | szövegek, amelyeknek mind szerepelniük kell az oldalon; egy szöveg területre is korlátozható |
-| **2. Kibocsátó** | *Állandó szöveg* (egy szállítóhoz tartozó sablon) vagy az oldalról olvasva |
+| **2. Kibocsátó** | *Állandó szöveg* (egy szállítóhoz tartozó sablon) vagy az oldalról olvasva. Az állandó nevet a program csak akkor adja meg, ha a lap is igazolja: a név szerepel rajta, vagy a szállító adószáma ehhez a céghez tartozik. Ha nem (egy másik szállító lapja tévesen illeszkedett), a kibocsátó a lapon talált adószám cége, vagy üresen marad – és szól, hogy lehet, hogy rossz sablon illeszkedett |
 | **3. Számlaszám** | általában *Címke mellett*: megkeresi a címkét (pl. `Számlaszám`) és a mellette/alatta álló értéket olvassa |
 | **4. Dátumok** (nem kötelező) | saját szabály a kiállítás / teljesítés dátumához vagy a határidőhöz, ha az általános címkék ennél az elrendezésnél tévednek (pl. „Dátum/Teljesítés ideje”); a szabály által olvasott szöveg első dátuma számít. Rajzolható is (*Kelte / Teljesítés / Határidő*) |
 
@@ -174,7 +181,7 @@ a kibocsátót olvasd az oldalról – így egy sablon minden cégre jó, amely 
 Beépített sablonok: Számlázz.hu, Billingo, NAV Online Számlázó, pénztárgépes nyugták, NaturaSoft, Okos-Ügyvitel,
 FR-SOFT, Vectory, JUTA-soft, MVM LIBRA, SAP Business One, Microsoft Dynamics 365 Business Central, Diamond Stúdió,
 InfoCentrum, HUGIR, RLB-60, webshop-számlák, előnyomott számlatömb, valamint néhány nagy szolgáltató saját rendszere
-(METRO, Magyar Telekom, MOL üzemanyagkártya, FleetCor, ZNET, ViDaNet). Amit egyik sem ismer fel, azt az **Általános
+(METRO, Magyar Telekom, MOL üzemanyagkártya, FleetCor, ZNET, ViDaNet, Roto Elzett). Amit egyik sem ismer fel, azt az **Általános
 (nincs sablon)** szabályai olvassák. A *Beépített sablonok visszaállítása…* a hiányzókat pótolja.
 
 ### Szűrők (haladó)

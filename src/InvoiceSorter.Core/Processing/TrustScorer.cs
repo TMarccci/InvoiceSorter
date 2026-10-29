@@ -35,7 +35,10 @@ public static class TrustScorer
 
         // ---- issuer
         if (doc.HasEdit("issuer")) { }
-        else if (style.Issuer.Mode == FieldMode.Fixed) { }
+        else if (style.Issuer.Mode == FieldMode.Fixed)
+        {
+            if (doc.Notes.Contains(FixedIssuerNotOnPageNote)) Deduct(15, "a sablon rögzített kibocsátója nem szerepel a lapon – lehet, hogy rossz sablon illeszkedett");
+        }
         else if (!string.IsNullOrWhiteSpace(doc.Issuer))
         {
             var known = settings.KnownIssuers.Select(k => InvoiceProcessor.ParseKnownIssuer(k).Name).Contains(doc.Issuer) ||
@@ -150,6 +153,7 @@ public static class TrustScorer
 
     public const string IssuerByTaxNumberNote = "A kibocsátó az adószáma alapján felismerve.";
     public const string IssuerConfirmedByTaxNumberNote = "A kibocsátót az adószáma megerősíti.";
+    public const string FixedIssuerNotOnPageNote = "A sablon rögzített kibocsátója nem szerepel a lapon, ezért nem azt adta meg – lehet, hogy rossz sablon illeszkedett.";
     public const string IssuerCorrectedByTaxNumberNote = "A kibocsátónév a szállító adószámához tartozó névre cserélve.";
 
     /// <summary>Lowercase words that are normal in Hungarian company names.</summary>

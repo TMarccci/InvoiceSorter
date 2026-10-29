@@ -728,6 +728,47 @@
     }
   },
   {
+    "Id": "roto-elzett",
+    "Name": "Roto Elzett (saját rendszer)",
+    "Enabled": true,
+    "IsFallback": false,
+    "Notes": "Roto Elzett Vasalatkereskedelmi Kft. számlái. Csak az első oldalt ismeri fel ('Levelezéskor és fizetéskor kérjük hivatkozni'); a 'Számla oldal 2 számlaszám …' lapok és a hátoldali ÁSZF folytatólapok. Kelte = teljesítés = 'Dátum/Teljesítés ideje'; határidő = a '… -ig levonás nélkül' dátum.",
+    "IdentifierRules": [
+      {
+        "Text": "Roto Elzett Vasalatkereskedelmi"
+      },
+      {
+        "Text": "Levelezéskor és fizetéskor kérjük hivatkozni"
+      }
+    ],
+    "Issuer": {
+      "Mode": "Fixed",
+      "FixedValue": "Roto Elzett Vasalatkereskedelmi Kft."
+    },
+    "InvoiceNumber": {
+      "Mode": "Label",
+      "LabelText": "Számlaszám",
+      "LabelDirection": "Right",
+      "Regex": "(?<digits>(?<![0-9])\\d(?:\\s?[0-9OoIl]){8})(?![0-9])",
+      "RemoveSpaces": true,
+      "FixOcrDigits": true
+    },
+    "IssueDate": {
+      "Mode": "Label",
+      "LabelText": "Dátum/Teljesítés ideje",
+      "LabelDirection": "Right"
+    },
+    "FulfillmentDate": {
+      "Mode": "Label",
+      "LabelText": "Dátum/Teljesítés ideje",
+      "LabelDirection": "Right"
+    },
+    "DueDate": {
+      "Mode": "PageRegex",
+      "Regex": "(?<value>(?:19|20)\\d{2}\\.\\s?\\d{2}\\.\\s?\\d{2})\\.?\\s*-\\s*ig\\s+levon[áa]s\\s+n[ée]lk[üu]l"
+    }
+  },
+  {
     "Id": "generic",
     "Name": "Általános (nincs sablon)",
     "Enabled": true,

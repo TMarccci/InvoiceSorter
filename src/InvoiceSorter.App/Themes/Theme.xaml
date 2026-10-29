@@ -14,6 +14,7 @@
     <local:NullToVisibilityConverter x:Key="NullToVisInverted" Invert="True" />
     <local:InverseBoolConverter x:Key="InverseBool" />
     <local:ZeroToVisibilityConverter x:Key="ZeroToVis" />
+    <local:SubtractConverter x:Key="Subtract" />
     <local:ZeroToVisibilityConverter x:Key="ZeroToVisInverted" Invert="True" />
     <local:ThumbnailConverter x:Key="Thumbnail" />
     <local:EnumVisibilityConverter x:Key="EnumVis" />

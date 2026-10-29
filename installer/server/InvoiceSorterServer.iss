@@ -8,7 +8,7 @@
 ;            eltávolításkor megmaradnak; csak a rendszergazdák és a SYSTEM érik el (a kulcsok miatt).
 
 #ifndef AppVersion
-  #define AppVersion "1.3.0"
+  #define AppVersion "1.4.0"
 #endif
 #ifndef ServerDir
   #define ServerDir "..\..\publish\server"
@@ -93,6 +93,8 @@ Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall add rule name=""{#FirewallRule}"" dir=in action=allow protocol=TCP localport={code:ServerPort} program=""{app}\InvoiceSorterServer.exe"""; Flags: runhidden waituntilterminated; Tasks: firewall; StatusMsg: "Tűzfalszabály…"
 Filename: "{sys}\sc.exe"; Parameters: "start {#ServiceName}"; Flags: runhidden waituntilterminated; StatusMsg: "A szolgáltatás indítása…"
 Filename: "{app}\InvoiceSorterServerManager.exe"; Description: "A szerverkezelő megnyitása (kliens kulcs, Surya telepítése)"; Flags: nowait postinstall skipifsilent shellexec
+; Frissítés a szerverkezelőből (csendes telepítés): a szerverkezelő újra megnyílik.
+Filename: "{app}\InvoiceSorterServerManager.exe"; Flags: nowait shellexec; Check: WizardSilent
 
 [UninstallRun]
 Filename: "{sys}\sc.exe"; Parameters: "stop {#ServiceName}"; Flags: runhidden waituntilterminated; RunOnceId: "StopService"

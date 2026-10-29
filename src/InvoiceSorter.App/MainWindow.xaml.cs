@@ -14,6 +14,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        WindowFit.Attach(this);
         ViewModel = new MainViewModel();
         DataContext = ViewModel;
 
@@ -88,6 +89,29 @@ public partial class MainWindow : Window
             menu.Items.Add(item);
         }
         menu.IsOpen = true;
+    }
+
+    /// <summary>"Deleted pages…": a menu of the deleted pages; the chosen one goes back where it was deleted from.</summary>
+    private void RestorePages_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement button) return;
+        var menu = new ContextMenu { PlacementTarget = button, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom, MaxHeight = 480 };
+        foreach (var page in ViewModel.DeletedPages)
+        {
+            var item = new MenuItem { Header = ViewModel.RestoreTargetText(page) };
+            item.Click += (_, _) => ViewModel.RestoreDeletedPage(page);
+            menu.Items.Add(item);
+        }
+        if (menu.Items.Count == 0) menu.Items.Add(new MenuItem { Header = "Nincs törölt oldal", IsEnabled = false });
+        menu.IsOpen = true;
+    }
+
+    /// <summary>Delete on a page thumbnail: delete that page (the command asks first).</summary>
+    private void PagesList_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key != System.Windows.Input.Key.Delete || !ViewModel.DeletePageCommand.CanExecute(null)) return;
+        ViewModel.DeletePageCommand.Execute(null);
+        e.Handled = true;
     }
 
     private static string Shorten(string s, int max) =>

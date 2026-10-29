@@ -168,7 +168,8 @@ public static class InvoiceProcessor
         var docs = new List<InvoiceDocument>();
         InvoiceDocument? current = null;
         var fallback = FallbackStyle(styles);
-        (int Page, int Of)? previousCounter = null;
+        (int Page, int Of, bool HasTotal)? previousCounter = null;
+        var currentCounters = new HashSet<(int Page, int Of)>();   // page counters of the invoice being built
 
         foreach (var page in job.Pages)
         {
@@ -177,18 +178,31 @@ public static class InvoiceProcessor
                 AppLog.Debug($"Page {page.Number}: blank, removed");
                 continue;
             }
+            if (page.Deleted)
+            {
+                AppLog.Debug($"Page {page.Number}: deleted by the user");
+                page.DeletedFrom = null;   // the invoices are rebuilt: a restored page becomes a new invoice
+                continue;
+            }
 
             // The normal OCR text decides; the high resolution re-read (if any) is the fallback.
             var style = page.Readings.Select(r => FieldReader.FindStyle(r, styles, settings)).FirstOrDefault(s => s != null);
+            var counter = PageCounterOf(page);
+            var titleContinuation = current != null && HasContinuationTitle(page, settings);
             var continuation = settings.ContinuationKeywords.Any(k =>
                 !string.IsNullOrWhiteSpace(k) && TextUtil.FuzzyContainsText(page.CompactText, k, settings.FuzzyTolerance))
-                || (current != null && HasContinuationTitle(page, settings))
+                || titleContinuation
                 // "Oldal: 2/3": a later page of a multi-page invoice that repeats the header of its layout (same style),
-                // or the page that follows "Oldal: 1/3" of the previous page.
-                || (current != null && PageOf(page) is { Page: > 1 } later && later.Page <= later.Of &&
+                // or the page that follows "Oldal: 1/3" of the previous page – "Számla oldal 2" after "Oldal 1" too, when
+                // neither has a total (the printed terms on the back of page 1 may stand between them).
+                // Not when the invoice has this page already, or the page shows another invoice number: a pile scanned
+                // in reverse ("2/2", "1/2" | "2/2", "1/2" of the next invoice).
+                || (current != null && counter is { Page: > 1 } later && later.Page <= later.Of && !currentCounters.Contains((later.Page, later.Of)) &&
                     ((style != null && style == current.Style) ||
-                     (previousCounter is { } prev && prev.Page == later.Page - 1 && prev.Of == later.Of && later.Of > later.Page - 1 && prev.Of != prev.Page)));
-            previousCounter = page.IsBlank ? previousCounter : PageOf(page);
+                     (previousCounter is { } prev && prev.Page == later.Page - 1 &&
+                      ((prev.HasTotal && later.HasTotal && prev.Of == later.Of) || (!prev.HasTotal && !later.HasTotal)))) &&
+                    !OtherInvoiceNumber(current, page, fallback, settings));
+            if (!page.IsBlank && !(counter == null && titleContinuation)) previousCounter = counter;
             var mentionsReceiver = style == null && settings.NewDocumentOnReceiverMatch && page.Readings.Any(r =>
                 VatValidator.MentionsReceiver(r.Text, r.CompactText, settings.ReceiverCompanies, settings.FuzzyTolerance));
 
@@ -204,6 +218,7 @@ public static class InvoiceProcessor
                         : title != null ? StartReason.Title : StartReason.FirstPage,
                 };
                 docs.Add(current);
+                currentCounters.Clear();
                 var reason = style != null ? $"style {style.Name}" : mentionsReceiver ? "unknown style, mentions receiver" :
                     title != null ? $"unknown style, title '{title}'" : "unknown style, first page";
                 AppLog.Debug($"Page {page.Number}: new invoice ({reason})");
@@ -213,6 +228,7 @@ public static class InvoiceProcessor
                 AppLog.Debug($"Page {page.Number}: continuation of previous invoice{(continuation ? " (continuation keyword)" : "")}");
             }
             current!.Pages.Add(page);
+            if (counter is { } c) currentCounters.Add((c.Page, c.Of));
         }
 
         foreach (var doc in docs) ReadDocument(doc, settings);
@@ -259,13 +275,19 @@ public static class InvoiceProcessor
     /// The printed page counter ("Oldal: 2/3", "Page 1/2"), read from the word after an "Oldal"/"Page" label on the
     /// same line (the OCR text order of the two may differ). Null if there is none.
     /// </summary>
-    public static (int Page, int Of)? PageOf(PageInfo page)
+    public static (int Page, int Of)? PageOf(PageInfo page) => PageCounterOf(page) is { } c ? (c.Page, c.Of) : null;
+
+    /// <summary>The page counter and whether it has a total ("2/3") or not ("Oldal 2").</summary>
+    private static (int Page, int Of, bool HasTotal)? PageCounterOf(PageInfo page)
     {
         var words = page.Lines.SelectMany(l => l.Words).ToList();
         foreach (var label in words)
         {
             var f = TextUtil.Compact(label.Text);
-            if (f.Length < 4 || f.Length > 6 || (TextUtil.Levenshtein(f, "oldal") > 1 && f != "page")) continue;
+            // "Oldal", "Page", "Oldalszám" (MVM)
+            bool isLabel = (f.Length is >= 4 and <= 6 && (TextUtil.Levenshtein(f, "oldal") <= 1 || f == "page")) ||
+                           (f.Length is >= 8 and <= 10 && TextUtil.Levenshtein(f, "oldalszam") <= 1);
+            if (!isLabel) continue;
             var right = words.Where(w => w.X > label.X + label.W * 0.5 && w.X < label.X + label.W + 0.12 &&
                                          Math.Abs(w.CenterY - label.CenterY) < Math.Max(label.H, 0.008))
                 .OrderBy(w => w.X).Select(w => w.Text).Take(3);
@@ -274,7 +296,7 @@ public static class InvoiceProcessor
             // "Oldal: 2/3" or just "Oldal: 2" (METRO)
             int k = int.Parse(TextUtil.ToDigits(m.Groups[1].Value));
             int n = m.Groups[2].Success ? int.Parse(TextUtil.ToDigits(m.Groups[2].Value)) : k;
-            if (k >= 1 && n >= 1) return (k, n);
+            if (k >= 1 && n >= 1) return (k, n, m.Groups[2].Success);
         }
         return null;
     }
@@ -301,7 +323,9 @@ public static class InvoiceProcessor
         doc.Notes.Clear();
         if (doc.Style != null)
         {
-            var issuer = FirstValue(doc, p => ReadFieldWithFallback(doc.Style.Issuer, p, settings).Value) ?? "";
+            var issuer = doc.Style.Issuer.Mode == FieldMode.Fixed
+                ? FixedIssuer(doc, settings)
+                : FirstValue(doc, p => ReadFieldWithFallback(doc.Style.Issuer, p, settings).Value) ?? "";
             if (doc.Style.Issuer.Mode != FieldMode.Fixed)
             {
                 issuer = NormalizeIssuer(issuer, settings);
@@ -317,7 +341,7 @@ public static class InvoiceProcessor
                 else if (byTaxNumber != null) doc.Notes.Add(TrustScorer.IssuerConfirmedByTaxNumberNote);
             }
             doc.Issuer = issuer;
-            doc.InvoiceNumber = FirstValue(doc, p => ReadFieldWithFallback(doc.Style.InvoiceNumber, p, settings).Value) ?? "";
+            doc.InvoiceNumber = InvoiceNumberOf(doc, settings);
         }
         else
         {
@@ -332,6 +356,36 @@ public static class InvoiceProcessor
         ReadDates(doc, settings);
         Score(doc, settings);
         doc.Refresh();
+    }
+
+    /// <summary>
+    /// The issuer of a style with a fixed issuer name: the style does not set it by itself. The name counts only when the
+    /// first page confirms it – it is printed there (in any reading), or the supplier tax number belongs to it. Otherwise
+    /// the issuer is the company of the supplier tax number (a page that matched the style by mistake gets its real
+    /// issuer), or stays empty for the user. Adds the matching note to <see cref="InvoiceDocument.Notes"/>.
+    /// </summary>
+    public static string FixedIssuer(InvoiceDocument doc, AppSettings settings)
+    {
+        var name = doc.Style?.Issuer.FixedValue?.Trim() ?? "";
+        if (doc.Pages.Count == 0) return "";
+        var byTax = IssuerByTaxNumber(doc.Pages, name, settings);
+        if (name.Length == 0)
+        {
+            if (byTax != null) doc.Notes.Add(TrustScorer.IssuerByTaxNumberNote);
+            return byTax ?? "";
+        }
+        if (byTax != null && (byTax == name || SameCompany(byTax, name) || SameCompany(name, byTax)))
+        {
+            doc.Notes.Add(TrustScorer.IssuerConfirmedByTaxNumberNote);
+            return name;
+        }
+        var core = VatValidator.StripCompanyForm(name);
+        if (core.Length > 0 && doc.Pages[0].Readings.Any(r => TextUtil.FuzzyContainsText(r.CompactText, core, settings.FuzzyTolerance)))
+            return name;
+
+        doc.Notes.Add(TrustScorer.FixedIssuerNotOnPageNote);
+        if (byTax != null) doc.Notes.Add(TrustScorer.IssuerByTaxNumberNote);
+        return byTax ?? "";
     }
 
     /// <summary>The three dates; a date the user typed is kept (re-reading after a split, merge or rotation).</summary>
@@ -630,7 +684,10 @@ public static class InvoiceProcessor
         var generic = FallbackStyle(styles);
         var fields = new List<(FieldDefinition Field, string Source)>();
         for (var f = doc.Style?.Issuer; f != null; f = f.Fallback)
+        {
             if (f.Mode != FieldMode.Fixed) fields.Add((f, $"„{doc.Style!.Name}” sablon"));
+            else if (!string.IsNullOrWhiteSpace(f.FixedValue)) result.Add(new(f.FixedValue.Trim(), $"„{doc.Style!.Name}” sablon (a lapon nem szerepel)"));
+        }
         if (generic != null && generic != doc.Style)
             for (var f = generic.Issuer; f != null; f = f.Fallback) fields.Add((f, "általános szabályok"));
         // Not banks of the seller block and not parts of sentences ("Ezúton értesítjük, hogy a … Nyrt.").
@@ -698,6 +755,48 @@ public static class InvoiceProcessor
             }
         }
         return null;
+    }
+
+    /// <summary>
+    /// The page shows an invoice number and the invoice being built another one (read with the same rule; a partly read
+    /// number that is contained in the other counts as the same). Nothing readable on either side: no contradiction.
+    /// </summary>
+    private static bool OtherInvoiceNumber(InvoiceDocument doc, PageInfo page, InvoiceStyle? fallback, AppSettings settings)
+    {
+        if ((doc.Style ?? fallback) is not { } style) return false;
+        string? Number(PageInfo p)
+        {
+            try { return TextUtil.Compact(ReadFieldWithFallback(style.InvoiceNumber, p, settings).Value); }
+            catch (Exception ex) { AppLog.Debug($"Invoice number check: {ex.Message}"); return null; }
+        }
+        var mine = Number(page);
+        if (string.IsNullOrEmpty(mine)) return false;
+        foreach (var p in doc.Pages)
+        {
+            var theirs = Number(p);
+            if (string.IsNullOrEmpty(theirs)) continue;
+            return !(mine == theirs || mine.Contains(theirs, StringComparison.Ordinal) || theirs.Contains(mine, StringComparison.Ordinal));
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// The invoice number of the first page that has one. A later page of the same invoice that repeats it in full
+    /// ("Számla oldal 2 számlaszám 412345678") wins over a partly read one on the first page ("45678" – the number
+    /// crossed by a pen stroke).
+    /// </summary>
+    private static string InvoiceNumberOf(InvoiceDocument doc, AppSettings settings)
+    {
+        var values = doc.Pages.Select(p => ReadFieldWithFallback(doc.Style!.InvoiceNumber, p, settings).Value)
+            .Where(v => !string.IsNullOrWhiteSpace(v)).Select(v => v!).ToList();
+        if (values.Count == 0) return "";
+        var first = values[0];
+        var compact = TextUtil.Compact(first);
+        var fuller = values.Skip(1)
+            .Where(v => TextUtil.Compact(v) is { } c && c.Length > compact.Length && compact.Length > 0 && c.Contains(compact, StringComparison.Ordinal))
+            .GroupBy(v => v).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault();
+        if (fuller != null) AppLog.Debug($"Invoice number '{first}' of the first page is part of '{fuller}' on a later page: the later one is used");
+        return fuller ?? first;
     }
 
     private static string? FirstValue(InvoiceDocument doc, Func<PageInfo, string?> read)
@@ -808,10 +907,103 @@ public static class InvoiceProcessor
         else
         {
             doc.Vat = CheckVat(doc.Pages, settings);
+            ReadDates(doc, settings);
             doc.Refresh();
         }
         UpdateDuplicates(job);
         ScoreAll(job, settings);
         AppLog.Info($"{doc.Number}. számla: a(z) {page.Number}. oldal a(z) {newIndex + 1}. helyre került (oldalak: {doc.PageRange})");
+    }
+
+    /// <summary>
+    /// Deletes a page that belongs to no invoice (advert, a sheet scanned twice, an empty page that has some marks). It
+    /// is not saved and stays deleted when the invoices are detected again; the source PDF is not changed. An invoice
+    /// that loses its only page is removed. Returns the invoice that keeps the other pages, or null when it was removed.
+    /// </summary>
+    public static InvoiceDocument? DeletePage(InvoiceJob job, InvoiceDocument doc, PageInfo page, IReadOnlyList<InvoiceStyle> styles, AppSettings settings)
+    {
+        int idx = doc.Pages.IndexOf(page);
+        if (idx < 0 || !job.Documents.Contains(doc)) throw new InvalidOperationException("Az oldal nem ehhez a számlához tartozik.");
+        doc.Pages.RemoveAt(idx);
+        page.Deleted = true;
+        page.DeletedFrom = doc;
+        page.DeletedIndex = idx;
+
+        if (doc.Pages.Count == 0)
+        {
+            int number = doc.Number;
+            job.Documents.Remove(doc);
+            Renumber(job);
+            UpdateDuplicates(job);
+            ScoreAll(job, settings);
+            AppLog.Info($"A(z) {page.Number}. oldal törölve; ez volt a(z) {number}. számla egyetlen oldala, a számla is törölve");
+            return null;
+        }
+
+        ReadAfterPageChange(doc, idx == 0, styles, settings);
+        UpdateDuplicates(job);
+        ScoreAll(job, settings);
+        AppLog.Info($"A(z) {page.Number}. oldal törölve a(z) {doc.Number}. számlából (oldalak most: {doc.PageRange})");
+        return doc;
+    }
+
+    /// <summary>
+    /// Brings a deleted page back: to its place in the invoice it was deleted from, or – when it was the only page of
+    /// that invoice – the invoice comes back with its values. After the invoices were detected again it becomes a new
+    /// invoice at its place in the page order. Returns the invoice that holds the page.
+    /// </summary>
+    public static InvoiceDocument RestorePage(InvoiceJob job, PageInfo page, IReadOnlyList<InvoiceStyle> styles, AppSettings settings)
+    {
+        if (!page.Deleted || !job.Pages.Contains(page)) throw new InvalidOperationException("Ez az oldal nincs törölve.");
+        var doc = page.DeletedFrom;
+        page.Deleted = false;
+        page.DeletedFrom = null;
+
+        if (doc != null && job.Documents.Contains(doc))
+        {
+            int idx = Math.Clamp(page.DeletedIndex, 0, doc.Pages.Count);
+            doc.Pages.Insert(idx, page);
+            ReadAfterPageChange(doc, idx == 0, styles, settings);
+        }
+        else
+        {
+            bool sameInvoice = doc != null && doc.Pages.Count == 0;
+            if (!sameInvoice)
+                doc = new InvoiceDocument { Style = FieldReader.FindStyle(page, styles, settings) ?? FallbackStyle(styles), StartReason = StartReason.Manual };
+            doc!.Pages.Add(page);
+            int at = job.Documents.ToList().FindIndex(d => d.Pages.Count > 0 && d.Pages.Min(p => p.Number) > page.Number);
+            job.Documents.Insert(at < 0 ? job.Documents.Count : at, doc);
+            if (sameInvoice) doc.Refresh();
+            else ReadDocument(doc, settings);
+        }
+
+        Renumber(job);
+        UpdateDuplicates(job);
+        ScoreAll(job, settings);
+        AppLog.Info($"A(z) {page.Number}. oldal visszaállítva a(z) {doc.Number}. számlába (oldalak: {doc.PageRange})");
+        return doc;
+    }
+
+    /// <summary>
+    /// An invoice lost or got back a page: read again (a new first page may also match another style) unless the
+    /// issuer or invoice number was typed by hand – then only the buyer VAT number and the dates are checked again.
+    /// The user's "VAT accepted" decision is kept.
+    /// </summary>
+    private static void ReadAfterPageChange(InvoiceDocument doc, bool firstPageChanged, IReadOnlyList<InvoiceStyle> styles, AppSettings settings)
+    {
+        if (!doc.HasEdit("issuer") && !doc.HasEdit("invoice number"))
+        {
+            if (firstPageChanged && !doc.HasEdit("style") && FieldReader.FindStyle(doc.Pages[0], styles, settings) is { } style) doc.Style = style;
+            bool approved = doc.VatApproved;
+            ReadDocument(doc, settings);
+            doc.VatApproved = approved;
+        }
+        else
+        {
+            doc.Vat = CheckVat(doc.Pages, settings);
+            doc.NonInvoiceTitle = FindNonInvoiceTitle(doc, settings);
+            ReadDates(doc, settings);
+            doc.Refresh();
+        }
     }
 }

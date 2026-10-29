@@ -34,22 +34,53 @@ public static class UpdateChecker
         return http;
     }
 
-    /// <summary>The newest release when it is newer than <paramref name="currentVersion"/>, otherwise null.</summary>
+    /// <summary>
+    /// The highest released version when it is newer than <paramref name="currentVersion"/>, otherwise null. All releases
+    /// are listed: GitHub's "latest" is the one published last, which is not always the highest version (a fix of an
+    /// older version published after a new one would hide the new one).
+    /// </summary>
     public static async Task<Release?> CheckAsync(string currentVersion, CancellationToken ct = default)
     {
         using var http = NewClient(currentVersion, TimeSpan.FromSeconds(15));
         http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
-        using var response = await http.GetAsync($"https://api.github.com/repos/{Repository}/releases/latest", ct).ConfigureAwait(false);
+        using var response = await http.GetAsync($"https://api.github.com/repos/{Repository}/releases?per_page=30", ct).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode) return null;
-        var release = Parse(await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false));
+        var release = Newest(ParseList(await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false)));
         return release != null && IsNewer(release.Version, currentVersion) ? release : null;
     }
+
+    /// <summary>Reads the GitHub release list; drafts and pre-releases are left out.</summary>
+    public static IReadOnlyList<Release> ParseList(string json)
+    {
+        using var doc = JsonDocument.Parse(json);
+        if (doc.RootElement.ValueKind != JsonValueKind.Array) return Array.Empty<Release>();
+        var list = new List<Release>();
+        foreach (var item in doc.RootElement.EnumerateArray())
+        {
+            if (item.TryGetProperty("draft", out var draft) && draft.ValueKind == JsonValueKind.True) continue;
+            if (item.TryGetProperty("prerelease", out var pre) && pre.ValueKind == JsonValueKind.True) continue;
+            if (Parse(item) is { } release) list.Add(release);
+        }
+        return list;
+    }
+
+    /// <summary>The release with the highest version number.</summary>
+    public static Release? Newest(IEnumerable<Release> releases) =>
+        releases.Select(r => (Release: r, Version: Version.TryParse(Pad(r.Version), out var v) ? v : null))
+            .Where(x => x.Version != null)
+            .OrderByDescending(x => x.Version)
+            .Select(x => x.Release)
+            .FirstOrDefault();
 
     /// <summary>Reads a GitHub "release" JSON answer.</summary>
     public static Release? Parse(string json)
     {
         using var doc = JsonDocument.Parse(json);
-        var root = doc.RootElement;
+        return Parse(doc.RootElement);
+    }
+
+    private static Release? Parse(JsonElement root)
+    {
         var tag = root.TryGetProperty("tag_name", out var t) ? t.GetString() ?? "" : "";
         if (tag.Length == 0) return null;
         var url = root.TryGetProperty("html_url", out var u) ? u.GetString() ?? ReleasesPage : ReleasesPage;
@@ -90,9 +121,12 @@ public static class UpdateChecker
         return path;
     }
 
-    /// <summary>Starts the downloaded installer (it asks for administrator rights and closes the running program).</summary>
+    /// <summary>
+    /// Starts the downloaded installer without its wizard: after the administrator approval only a progress window shows,
+    /// the running program is closed, and the installer starts the new version when it is done.
+    /// </summary>
     public static void StartInstaller(string path) =>
-        Process.Start(new ProcessStartInfo(path, "/SP- /NOCANCEL /CLOSEAPPLICATIONS") { UseShellExecute = true });
+        Process.Start(new ProcessStartInfo(path, "/SILENT /SP- /SUPPRESSMSGBOXES /NOCANCEL /NORESTART /CLOSEAPPLICATIONS") { UseShellExecute = true });
 
     /// <summary>"v1.2.3" / "1.2.3-beta" → "1.2.3".</summary>
     public static string Clean(string version)

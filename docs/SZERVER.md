@@ -42,8 +42,10 @@ Az Invoice Sorter szerver két dolgot ad a hálózat klienseinek:
 3. A végén megnyílik a **szerverkezelő**. Az *Áttekintés* oldalon látod a szerver címét és a **kliens kulcsot**.
 
 **Frissítés:** ha új verzió jelenik meg, a szerverkezelő fejlécében megjelenik az **„Új verzió érhető el”** gomb –
-erre kattintva letölti és elindítja az új szerver-telepítőt. (Kézzel is futtathatod az új telepítőt.) A telepítő
-leállítja a szolgáltatást, kicseréli a fájlokat, és újraindítja; a konfiguráció és a kulcsok megmaradnak.
+egy kattintás: letölti az új szerver-telepítőt, és rendszergazdai jóváhagyás után ablak nélkül telepíti. A telepítő
+leállítja a szolgáltatást, kicseréli a fájlokat, újraindítja, és a szerverkezelő újra megnyílik; a konfiguráció és a
+kulcsok megmaradnak. Az új beépített sablonokat a szerver induláskor felveszi a központi konfigurációba (új változat),
+így a kliensek is megkapják. (Kézzel is futtathatod az új telepítőt.)
 
 Első induláskor a szerver a beépített sablonokkal hozza létre a központi konfigurációt. Ha egy kliensen már
 kialakult egy jó helyi konfiguráció, vedd át: *Központi konfiguráció › Helyi konfiguráció importálása…*, és

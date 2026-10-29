@@ -99,6 +99,41 @@ internal static class DevScreenshots
             }
             settings.ShowPage(0);
             settings.Close();
+
+            // Deleting a page of a multi-page invoice, then the "Deleted pages" menu, then full screen (F12).
+            var multi = vm.Job.Documents.FirstOrDefault(d => d.Pages.Count >= 3) ?? vm.Job.Documents.FirstOrDefault(d => d.Pages.Count >= 2);
+            if (multi != null)
+            {
+                vm.SelectedDocument = multi;
+                vm.SelectedPage = multi.Pages[1];
+                vm.DeleteSelectedPage(ask: false);
+                await Settle();
+                Capture(window, Path.Combine(outDir, "9_page_deleted.png"));
+                var deleted = vm.DeletedPages.FirstOrDefault();
+                if (deleted != null)
+                {
+                    vm.RestoreDeletedPage(deleted);
+                    await Settle();
+                    Capture(window, Path.Combine(outDir, "9_page_restored.png"));
+                }
+            }
+            WindowFit.ToggleFullScreen(window);
+            await Settle(1200);
+            Capture(window, Path.Combine(outDir, "9_fullscreen.png"));
+            WindowFit.ToggleFullScreen(window);
+            await Settle();
+
+            // A small laptop screen (1366×768 at 125 %): the details scroll, the page stays visible.
+            var (state, width, height) = (window.WindowState, window.Width, window.Height);
+            window.WindowState = WindowState.Normal;
+            window.MinWidth = 600;
+            window.MinHeight = 400;
+            window.Width = 1093;
+            window.Height = 614;
+            await Settle(1200);
+            Capture(window, Path.Combine(outDir, "9_small_screen.png"));
+            (window.Width, window.Height, window.WindowState) = (width, height, state);
+            await Settle();
         }
         catch (Exception ex)
         {
