@@ -14,12 +14,13 @@ namespace InvoiceSorter.App;
 /// </summary>
 public static class WindowFit
 {
-    public static void Attach(Window window)
+    /// <param name="f11">F11 switches full screen too (the main window uses F11 for an action of the review screen).</param>
+    public static void Attach(Window window, bool f11 = true)
     {
         window.SourceInitialized += (_, _) => FitToScreen(window);
         window.PreviewKeyDown += (_, e) =>
         {
-            if (e.Key is Key.F12 or Key.F11 && Keyboard.Modifiers == ModifierKeys.None)
+            if ((e.Key == Key.F12 || f11 && e.Key == Key.F11) && Keyboard.Modifiers == ModifierKeys.None)
             {
                 ToggleFullScreen(window);
                 e.Handled = true;

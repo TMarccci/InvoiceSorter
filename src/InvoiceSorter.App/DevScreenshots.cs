@@ -69,6 +69,16 @@ internal static class DevScreenshots
             await Settle();
             Capture(window, Path.Combine(outDir, "4_review_edited.png"));
 
+            // Keyboard shortcuts: F10 hides the boxes over the page, Shift+F6 outlines every recognized text line.
+            Hotkey.Press(window.HotkeyButtons, "F10");
+            await Settle();
+            Capture(window, Path.Combine(outDir, "4_review_boxes_off.png"));
+            Hotkey.Press(window.HotkeyButtons, "F10");
+            Hotkey.Press(window.HotkeyButtons, "Shift+F6");
+            await Settle();
+            Capture(window, Path.Combine(outDir, "4_review_all_text.png"));
+            Hotkey.Press(window.HotkeyButtons, "Shift+F6");
+
             vm.Step = WizardStep.Save;
             await Settle();
             Capture(window, Path.Combine(outDir, "5_save.png"));

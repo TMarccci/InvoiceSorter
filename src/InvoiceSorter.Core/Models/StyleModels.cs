@@ -215,6 +215,8 @@ public sealed class AppSettings
         merged.CheckForUpdates = local.CheckForUpdates;
         merged.LastSourceFolder = local.LastSourceFolder;
         merged.LastOutputFolder = local.LastOutputFolder;
+        merged.ShowPageBoxes = local.ShowPageBoxes;
+        merged.ShowAllTextBoxes = local.ShowAllTextBoxes;
         merged.SuryaPython = local.SuryaPython;
         merged.SuryaLocation = local.SuryaLocation;
         merged.SuryaServerUrl = local.SuryaServerUrl;
@@ -423,6 +425,12 @@ public sealed class AppSettings
 
     public string LastSourceFolder { get; set; } = "";
     public string LastOutputFolder { get; set; } = "";
+
+    /// <summary>Boxes over the page (where the values were read; while reading also every text line). This computer's choice.</summary>
+    public bool ShowPageBoxes { get; set; } = true;
+
+    /// <summary>In the review screen every text line the OCR recognized is outlined too. This computer's choice.</summary>
+    public bool ShowAllTextBoxes { get; set; }
 
     /// <summary>A copy of these settings that checks the buyer VAT number against the given companies only.</summary>
     public AppSettings WithReceivers(IEnumerable<ReceiverCompany> receivers)

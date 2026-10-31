@@ -28,9 +28,9 @@ Ez az útmutató a kliensprogram használatát írja le. A szerver telepítésé
    a kiadás oldala nyílik meg. A beállítások és a sablonok megmaradnak. (A jelzés a *Beállítások › Konfiguráció*
    oldalon kikapcsolható.) Kézzel letölteni nem kell.
 
-**Kis képernyőn:** az **F12** (vagy F11) teljes képernyőre vált – címsor és tálca nélkül –, újra megnyomva vissza.
-Ha az ablak nagyobb lenne a képernyőnél, a program teljes méretben nyílik meg, és az ellenőrző képernyőn a számla
-adatai görgethetők, hogy az oldal képe mindig látsszon.
+**Kis képernyőn:** az **F12** teljes képernyőre vált – címsor és tálca nélkül –, újra megnyomva vissza (a többi
+ablakban az F11 is). Ha az ablak nagyobb lenne a képernyőnél, a program teljes méretben nyílik meg, az ellenőrző
+képernyő felső gombsora két sorba tördelődik, és a számla adatai görgethetők, hogy az oldal képe mindig látsszon.
 
 Az eltávolítás (*Gépház › Alkalmazások*) a felhasználói adatokat (beállítások, sablonok, napló) nem törli.
 
@@ -42,6 +42,14 @@ A program egy ötlépéses varázsló; a fejléc alatti sáv mutatja, hol tartas
 
 Válaszd ki (*Tallózás…*) vagy húzd az ablakra a szkenner által készített PDF-et. A **Vevő cég** mezőben megadhatod,
 melyik cégnek szólnak a számlák; az *Automatikus felismerés* az oldalakon lévő adószámok alapján választ.
+
+**Új vevő cég:** ha a szkennelés egy olyan cégnek szól, amely nincs a vevő cégeid között, az ellenőrző képernyő
+tetején sárga sáv jelzi („Az oldalak többsége … nevére szól”), a **Felvétel vevő cégként és újraellenőrzés** gomb
+pedig egy kattintással felveszi (a nevét a cégnyilvántartásból veszi) és újraellenőrzi a számlákat. Központi módban
+a cég a szerverre kerül, így minden gép megkapja; ha a szerver nem érhető el, a program szól, és a cég erre a
+feldolgozásra érvényes marad. A javaslathoz az kell, hogy az adószám az oldalak legalább ötödén (nagy kötegnél
+legalább 3 oldalon) szerepeljen; egy-két oldalas szkennelésnél akkor is megjelenik, ha az adószám a „Vevő” címke
+alatt áll.
 
 ### 2–3. Számlákra bontás, adatok olvasása és ellenőrzés
 
@@ -56,7 +64,8 @@ A *Feldolgozás indítása* után a program:
 - a hiányos számlákat **újraolvassa** (beállítástól függően először Surya OCR-rel, majd kétszeres nagyításban, a másik
   OCR-nyelvvel, sötétebben/világosabban, nagyobb kontraszttal, fekete-fehéren).
 
-Közben látod az éppen olvasott oldalt a megtalált adatok kereteivel, az eltelt és a hátralévő időt. Ha a Surya a
+Közben látod az éppen olvasott oldalt a felismert szöveg és a megtalált adatok kereteivel (a **Keretek** kapcsolóval
+vagy az **F10**-zel elrejthetők), az eltelt és a hátralévő időt. Ha a Surya a
 szerveren fut, és más gépek oldalai is várnak, a sorban elfoglalt hely is megjelenik („Sorban áll a szerveren: 3. hely”).
 
 ### 4. Hibák ellenőrzése
@@ -70,8 +79,12 @@ Lásd a [Mentés](#mentés) fejezetet.
 ## Hibák ellenőrzése és javítása
 
 A bal oldali lista minden számlát mutat: oldalak, sablon, kibocsátó, számlaszám, vevő adószáma, megbízhatósági pont
-és a problémák. A **Csak hibások** / **Csak alacsony pontszám** jelölőkkel szűrhetsz, a **Következő hiba** gomb a
-következő hibás számlára ugrik.
+és a problémák. A **Csak hibások** / **Csak alacsony pontszám** jelölőkkel szűrhetsz, a **Következő hiba** gomb (F1)
+a következő hibás számlára ugrik.
+
+Az oldal képe alatt két kapcsoló van: **Keretek** (F10) – a kiolvasott adatok (kibocsátó, számlaszám, vevő adószáma,
+dátumok, címkék) keretei be/ki, ha takarják a szöveget; **Minden felismert szöveg** (Shift+F6) – az OCR által
+felismert összes szövegsor kerete is, így látszik, mit olvasott a program és mit nem. A választást a gép megjegyzi.
 
 Lehetséges hibák:
 
@@ -93,22 +106,30 @@ név). Egy kattintással átveheted őket; a forrás az egérmutató alatt láts
 
 ### Gombok
 
-| Csoport | Gomb | Mit csinál |
-|---|---|---|
-| Oldalak | **Szétvágás itt** | a kijelölt oldaltól új számla kezdődik |
-| | **Oldal fel / le** | az oldal sorrendjének módosítása (a bélyegképek húzásával is megy) |
-| | **OCR-szöveg** | az oldalról kiolvasott teljes szöveg, olvasatonként külön fülön |
-| | **Forgatás balra / jobbra** | elforgatja és újraolvassa az oldalt; elforgatva menti |
-| | **Oldal törlése** | a kijelölt oldal kikerül a számlából, és nem kerül mentésre (reklám, kétszer beszkennelt lap, oda nem való oldal); a bélyegképen a *Delete* billentyű is jó. Ha a számla egyetlen oldala, a számla is törlődik – ha csak kihagynád a mentésből, inkább a **Kizárás** kell. A törölt oldal az *Újrafelismerés* után is törölve marad; az eredeti PDF nem változik |
-| | **Törölt oldalak (N)…** | csak ha van törölt oldal: a választott oldal visszakerül oda, ahonnan törölted (ha a számlák azóta újra lettek bontva, új számlaként, a helyén) |
-| Számla | **Összevonás az előzővel**, **Összevonás…** | az oldalakat az előző / bármelyik másik számlához fűzi |
-| | **Újraolvasás** | a kiválasztott sablonnal újraolvassa a számlát |
-| | **Új sablon…** | sablon készítése a kijelölt oldalból |
-| Mentés | **Kizárás** | a számla nem kerül mentésre |
-| | **Adószám elfogadva** | elfogadod, bár a vevő adószámát nem sikerült igazolni |
-| | **Dátumok elfogadva** | a dátumok így helyesek (szokatlan sorrend, régi dátum, vagy a számlán nem szereplő dátum is) |
-| | **Duplikátum megtartása** | mindkét azonos számlát menti (a második `_2` végződést kap) |
-| | **Ez számla** | a „nem számla” jelzés visszavonása |
+| Csoport | Gomb | Billentyű | Mit csinál |
+|---|---|---|---|
+| Oldalak | **Szétvágás itt** | F6 | a kijelölt oldaltól új számla kezdődik |
+| | **Oldal fel / le** | Shift+F3 / Shift+F4 | az oldal sorrendjének módosítása (a bélyegképek húzásával is megy) |
+| | **OCR-szöveg** | Shift+F8 | az oldalról kiolvasott teljes szöveg, olvasatonként külön fülön |
+| | **Forgatás jobbra / balra** | F9 / Shift+F5 | elforgatja és újraolvassa az oldalt; elforgatva menti |
+| | **Oldal törlése** | F7 | a kijelölt oldal kikerül a számlából, és nem kerül mentésre (reklám, kétszer beszkennelt lap, oda nem való oldal); a bélyegképen a *Delete* billentyű is jó. Ha a számla egyetlen oldala, a számla is törlődik – ha csak kihagynád a mentésből, inkább a **Kizárás** kell. A törölt oldal az *Újrafelismerés* után is törölve marad; az eredeti PDF nem változik |
+| | **Törölt oldalak (N)…** | Shift+F7 | csak ha van törölt oldal: a választott oldal visszakerül oda, ahonnan törölted (ha a számlák azóta újra lettek bontva, új számlaként, a helyén) |
+| Számla | **Összevonás az előzővel**, **Összevonás…** | F5, Shift+F2 | az oldalakat az előző / bármelyik másik számlához fűzi |
+| | **Újraolvasás** | F8 | a kiválasztott sablonnal újraolvassa a számlát |
+| | **Új sablon…** | Shift+F9 | sablon készítése a kijelölt oldalból |
+| Mentés | **Kizárás** | F4 | a számla nem kerül mentésre |
+| | **Adószám elfogadva** | F2 | elfogadod, bár a vevő adószámát nem sikerült igazolni |
+| | **Dátumok elfogadva** | F3 | a dátumok így helyesek (szokatlan sorrend, régi dátum, vagy a számlán nem szereplő dátum is) |
+| | **Duplikátum megtartása** | Shift+F1 | mindkét azonos számlát menti (a második `_2` végződést kap) |
+| | **Ez számla** | F11 | a „nem számla” jelzés visszavonása |
+
+**Gyorsbillentyűk** fontossági sorrendben: **F1** következő hiba · **F2** adószám elfogadva · **F3** dátumok elfogadva ·
+**F4** kizárás · **F5** összevonás az előzővel · **F6** szétvágás itt · **F7** oldal törlése · **F8** újraolvasás ·
+**F9** forgatás jobbra · **F10** keretek be/ki · **F11** ez számla · **F12** teljes képernyő. A ritkábbak a Shift-tel:
+**Shift+F1** duplikátum megtartása · **Shift+F2** összevonás… · **Shift+F3 / F4** oldal fel / le · **Shift+F5** forgatás
+balra · **Shift+F6** minden felismert szöveg · **Shift+F7** törölt oldalak · **Shift+F8** OCR-szöveg · **Shift+F9** új
+sablon · **Shift+F11** Excel-export. A billentyű a gomb sarkában is látszik (⇧ = Shift); csak az éppen látható és
+használható gomb reagál, és szövegbeírás közben is működik (a beírt dátum vagy név előbb rögzül).
 
 A kézzel módosított számlák sárga sorral és ✎ jellel látszanak, és a jelentésben is szerepelnek. Az
 **Újrafelismerés** a teljes fájlt újra szétbontja a jelenlegi sablonokkal (a meglévő OCR-ből; a kézi módosítások
@@ -153,9 +174,15 @@ Válaszd ki a célmappát, majd **Számlák mentése**.
 - A hibátlan számlák neve: `{Számlaszám}_{Kibocsátó}.pdf` (a minta a Beállításokban módosítható).
 - A még hibás számlák a `_Errors` almappába kerülnek (kikapcsolható).
 - Meglévő fájlt soha nem ír felül, hanem sorszámot fűz a névhez.
-- A számlák mellé CSV-jelentés (`_report_*.csv`) és a feldolgozás naplója (`_log_*.txt`) is kerül. A jelentésben a
-  számlaszám után a három dátum (`Kiállítás dátuma`, `Teljesítés dátuma`, `Fizetési határidő`, `2026.09.02.` alakban),
-  a végén pedig a forrásuk is szerepel. A fájlnévbe a dátumok nem kerülnek.
+- A számlák mellé jelentés kerül CSV-ben (`_report_*.csv`) és Excelben (`_report_*.xlsx`), valamint a feldolgozás
+  naplója (`_log_*.txt`). A jelentésben a számlaszám után a három dátum (`Kiállítás dátuma`, `Teljesítés dátuma`,
+  `Fizetési határidő`, `2026.09.02.` alakban), majd a forrásuk, a végén pedig az **OCR által kiolvasott szöveg**:
+  `Windows OCR szövege` és `Surya szövege` (oldalanként, „--- 2. oldal ---” fejléccel; az adott motor első olvasata).
+  A fájlnévbe a dátumok nem kerülnek.
+- Az **Excel-jelentés** két munkalapos: a *Számlák* lapon a dátumok valódi dátumok (rendezhetők, szűrhetők), a
+  pontszám szám; az *OCR-szöveg* lapon minden oldal minden olvasata külön sorban (olvasás, újraolvasások, Surya, a
+  felismert szavak számával). Mentés nélkül is kérhető: **Excel-export…** az ellenőrző képernyő tetején (Shift+F11),
+  illetve **Csak Excel-jelentés…** a mentés lépésben – ilyenkor a *Fájl* oszlop azt mutatja, hová kerülne a számla.
 - A kézzel javított kibocsátóneveket a program megjegyzi (központi módban a szerveren), így legközelebb automatikusan
   javítja.
 

@@ -55,7 +55,10 @@ Fontosabb Core-osztályok:
 | `VatValidator` | magyar adószám: formátum, ellenőrzőszám, ÁFA-kód, megyekód, OCR-hibák tűrése |
 | `TrustScorer` | 0–100 pont és indoklás |
 | `CompanyRegistry` | cégnév adószám alapján (EU VIES), gyorsítótárral |
-| `PdfExporter` | mentés, fájlnevek, CSV-jelentés |
+| `PdfExporter` | mentés, fájlnevek (`PlannedFile`), jelentés mentéskor és mentés nélkül (`ExportReport`) |
+| `InvoiceReport` | a jelentés oszlopai, CSV és Excel (*Számlák* + *OCR-szöveg* munkalap); motoronként az első olvasat szövege |
+| `XlsxWriter` | minimális .xlsx-író könyvtár nélkül (inline szöveg, szám, dátum `yyyy.mm.dd.` formátummal, rögzített, szűrhető fejléc) |
+| `ReceiverDetector` | a szkennelés vevő cége az adószámokból, és a be nem állított cég javaslata |
 | `SuryaOcr` | Surya helyi Python-folyamatként (`surya_worker.py`, stdin/stdout JSON) vagy a szerver soraként |
 | `JsonStore` | sablonok/beállítások betöltése, mentése, a beépített sablonok frissítése és migrációi |
 | `Central/CentralClient` | a szerver HTTP-kliense (magyar hibaüzenetekkel) |
@@ -101,8 +104,23 @@ InvoiceSorterServerManager.exe --data D:\proba\szerver --screenshots D:\kepek
 6. **Újraolvasás** (`PageRefiner`): a hiányos számlák oldalai más beállításokkal és/vagy Surya-val.
 7. **Pontszám** (`TrustScorer`), duplikátumok, „nem számla” címek.
 
+A **vevő cég** (`ReceiverDetector`) az 1. lépés után dől el: a beállított cég, amelynek adószáma a legtöbb oldalon
+szerepel. Javaslat (be nem állított cég): az adószám az oldalak legalább ötödén és legalább `min(3, oldalak)` oldalon,
+több mint kétszer annyi oldalon, mint a legjobb beállított cég; 3+ oldalon nem lehet többször eladói blokkban
+(„Szállító”, „Eladó” …), mint vevőiben, 1–2 oldalon pedig a „Vevő” típusú címke alatt kell állnia. A nevét a
+`InvoiceProcessor.NameSuggestedReceiverAsync` a cégnyilvántartásból adja. Központi módban a felvétel a szerver
+`POST /api/receivers` végpontjára megy; a feldolgozás vevő cége a letöltött lista példányára áll át.
+
 A felület a `ProgressInfo.Stage` konstansai alapján váltja a varázsló lépéseit – új lépésnévnél a konstansokat
 használd, ne szövegösszehasonlítást.
+
+**Gyorsbillentyűk** (`App/Hotkey.cs`): a gomb XAML-jében `local:Hotkey.Keys="F2"` / `"Shift+F3"`; a `MainWindow`
+betöltéskor összegyűjti ezeket a gombokat (a tooltipjükhöz hozzáírja a billentyűt), és a lenyomott billentyű a
+*látható és engedélyezett* gombot nyomja meg (UI Automation `Invoke` / `Toggle`), előtte a fókuszban lévő szövegmező
+értékét rögzíti. Így ugyanaz a billentyű több lépés gombja lehet (F10: a keretek az élő előnézetben és az ellenőrzésben).
+Csak F1–F24 önmagában vagy Shifttel; a Shift+F10 szabadon marad (helyi menü), az F12 a teljes képernyő
+(`WindowFit`, a főablakban az F11 nem). Az `ActionButton` / `ChipToggle` stílus a sarokban mutatja a billentyűt.
+A keretek láthatósága (`ShowPageBoxes`, `ShowAllTextBoxes`) gépenkénti beállítás (a `MergeCentral` megtartja).
 
 ## Felismerési szabályok (pontosság)
 
@@ -221,7 +239,7 @@ dotnet test tests/InvoiceSorter.Tests
 
 ```
 InvoiceSorter.Cli process <szkennelés.pdf> [--out <mappa>] [--styles <f>] [--settings <f>]   teljes futás
-InvoiceSorter.Cli reprocess <workDir> [--out <mappa>]       újra szétbontás a meglévő OCR-ből
+InvoiceSorter.Cli reprocess <workDir> [--out <mappa>] [--xlsx <f>]   újra szétbontás a meglévő OCR-ből (+ Excel-jelentés)
 InvoiceSorter.Cli dump <workDir> <oldal>                    OCR-szavak koordinátákkal
 InvoiceSorter.Cli test <workDir> <oldal> [--all]            melyik sablon hogyan olvassa az oldalt
 InvoiceSorter.Cli suggest <workDir> [--all]                 javaslatok a hibás számlák kibocsátójára / számlaszámára
@@ -231,6 +249,8 @@ InvoiceSorter.Cli rerender-test <workDir> [--dpi 300,400,600] [--pdf <f>]   újr
 InvoiceSorter.Cli learn <workDir>... --settings <f>         „kibocsátó | adószám” párok tanulása
 InvoiceSorter.Cli surya-test <kép> [--server <cím> --api-key <kulcs>]   Surya próba (helyi vagy szerver)
 ```
+
+Közös kapcsolók: `--registry <f>` (cégnév-gyorsítótár), `--local <mappa>` (munkamappák és napló máshol, pl. teszthez).
 
 ## Fordítás, telepítők
 

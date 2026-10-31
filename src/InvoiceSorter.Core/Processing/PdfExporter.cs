@@ -6,7 +6,7 @@ using PdfSharp.Pdf.IO;
 
 namespace InvoiceSorter.Core.Processing;
 
-public sealed record ExportResult(int Saved, int SavedWithErrors, int Skipped, int Excluded, string ReportPath, List<string> Files);
+public sealed record ExportResult(int Saved, int SavedWithErrors, int Skipped, int Excluded, string ReportPath, string ExcelPath, List<string> Files);
 
 /// <summary>Writes the split invoices as separate PDF files (pages are copied 1:1 from the source PDF).</summary>
 public static class PdfExporter
@@ -31,15 +31,29 @@ public static class PdfExporter
         return TextUtil.SanitizeFileName(string.Join("_", parts)) + ".pdf";
     }
 
+    private static string ErrorFolder(AppSettings settings) => string.IsNullOrWhiteSpace(settings.ErrorFolderName) ? "_Errors" : settings.ErrorFolderName;
+
+    /// <summary>Where the invoice will be saved, relative to the output folder (without the _2 of an existing file); "" when it is not saved.</summary>
+    public static string PlannedFile(InvoiceDocument doc, AppSettings settings) =>
+        doc.Excluded ? ""
+        : !doc.HasErrors ? BuildFileName(doc, settings)
+        : settings.SaveErrorDocuments ? Path.Combine(ErrorFolder(settings), BuildErrorFileName(doc))
+        : "";
+
+    /// <summary>The report of the scan as an Excel workbook, without saving the invoices (the "Fájl" column shows where they would go).</summary>
+    public static void ExportReport(InvoiceJob job, string xlsxPath, AppSettings settings)
+    {
+        InvoiceReport.WriteXlsx(xlsxPath, job.Documents.Select(d => (d, PlannedFile(d, settings))).ToList());
+        AppLog.Info($"Excel-jelentés mentve ({job.Documents.Count} számla): {xlsxPath}");
+    }
+
     public static ExportResult Export(InvoiceJob job, string outputDir, AppSettings settings, IProgress<ProgressInfo>? progress = null)
     {
         Directory.CreateDirectory(outputDir);
-        var errorDir = Path.Combine(outputDir, string.IsNullOrWhiteSpace(settings.ErrorFolderName) ? "_Errors" : settings.ErrorFolderName);
+        var errorDir = Path.Combine(outputDir, ErrorFolder(settings));
         var files = new List<string>();
         int saved = 0, savedErrors = 0, skipped = 0, excluded = 0;
-        var report = new StringBuilder();
-        report.AppendLine("Számla;Oldalak;Állapot;Megbízhatóság;Sablon;Kibocsátó;Számlaszám;Kiállítás dátuma;Teljesítés dátuma;Fizetési határidő;" +
-                          "Vevő adószáma;Fájl;Hibák;Kézi módosítás;Levonások;Dátumok forrása");
+        var report = new List<(InvoiceDocument Doc, string File)>();
 
         AppLog.Info($"{job.Documents.Count} számla mentése ide: {outputDir}");
         using var source = PdfReader.Open(job.SourcePath, PdfDocumentOpenMode.Import);
@@ -85,24 +99,28 @@ public static class PdfExporter
                 target = null;
             }
 
-            report.AppendLine(string.Join(";", new[]
-            {
-                doc.Number.ToString(), doc.PageRange, doc.StatusText, doc.Trust.ToString(), doc.StyleName, doc.Issuer, doc.InvoiceNumber,
-                doc.IssueDate, doc.FulfillmentDate, doc.DueDate,
-                doc.VatText, target == null ? "" : Path.GetRelativePath(outputDir, target), doc.ErrorsText, doc.EditsText, doc.TrustReasonsText,
-                $"kelte: {doc.IssueDateSource}; teljesítés: {doc.FulfillmentDateSource}; határidő: {doc.DueDateSource}",
-            }.Select(Csv)));
+            report.Add((doc, target == null ? "" : Path.GetRelativePath(outputDir, target)));
         }
 
         var stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
         var reportPath = Path.Combine(outputDir, $"_report_{stamp}.csv");
-        File.WriteAllText(reportPath, report.ToString(), new UTF8Encoding(true));
+        InvoiceReport.WriteCsv(reportPath, report);
+        var excelPath = Path.Combine(outputDir, $"_report_{stamp}.xlsx");
+        try
+        {
+            InvoiceReport.WriteXlsx(excelPath, report);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Az Excel-jelentés nem menthető (a CSV-jelentés elkészült)", ex);
+            excelPath = "";
+        }
 
         AppLog.Info($"Mentés kész: {saved} mentve, {savedErrors} a hibás mappába, {skipped} kihagyva, {excluded} kizárva. Jelentés: {reportPath}");
         var logPath = Path.Combine(outputDir, $"_log_{stamp}.txt");
         File.WriteAllLines(logPath, AppLog.EntriesSince(job.StartedAt).Select(e => e.ToString()), new UTF8Encoding(true));
 
-        return new ExportResult(saved, savedErrors, skipped, excluded, reportPath, files);
+        return new ExportResult(saved, savedErrors, skipped, excluded, reportPath, excelPath, files);
     }
 
     private static void WritePdf(PdfDocument source, InvoiceDocument doc, string path)
@@ -130,7 +148,4 @@ public static class PdfExporter
             if (!File.Exists(candidate)) return candidate;
         }
     }
-
-    private static string Csv(string s) =>
-        s.IndexOfAny(new[] { ';', '"', '\n', '\r' }) >= 0 ? "\"" + s.Replace("\"", "\"\"") + "\"" : s;
 }

@@ -23,6 +23,25 @@ public static class InvoiceProcessor
             AppLog.Warn($"Az oldalak többsége ({d.Pages}-ből {d.SuggestionPages}) ezt a céget említi: {d.Suggestion.Name} {d.Suggestion.VatNumber}, de ez nincs a vevő cégek között");
     }
 
+    /// <summary>
+    /// The suggested (not configured) receiving company gets its name from the company register: the name read above
+    /// its tax number may be misread or missing.
+    /// </summary>
+    public static async Task NameSuggestedReceiverAsync(InvoiceJob job, AppSettings settings, CancellationToken ct)
+    {
+        if (job.Detection?.Suggestion is not { } suggestion || !settings.LookupIssuerNames || VatValidator.Parse(suggestion.VatNumber) is not { } tax) return;
+        try
+        {
+            if (!CompanyRegistry.IsCached(tax.Core)) await CompanyRegistry.LookupAsync(new[] { tax.Core }, ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            AppLog.Debug($"A javasolt vevő cég neve nem kérdezhető le: {ex.Message}");
+        }
+        if (CompanyRegistry.CachedName(tax.Core) is { } name && name != suggestion.Name)
+            job.Detection = job.Detection with { Suggestion = new ReceiverCompany { Name = name, VatNumber = suggestion.VatNumber } };
+    }
+
     /// <param name="receiver">The receiving company of this scan; null = detect it automatically.</param>
     public static async Task<InvoiceJob> RunAsync(string pdfPath, IReadOnlyList<InvoiceStyle> styles, AppSettings settings,
         IProgress<ProgressInfo>? progress, CancellationToken ct, ReceiverCompany? receiver = null)
@@ -51,6 +70,7 @@ public static class InvoiceProcessor
         var jobSettings = SettingsFor(job, settings);
         BuildDocuments(job, styles, jobSettings);
         await LookupIssuerNamesAsync(job, styles, jobSettings, progress, ct);
+        await NameSuggestedReceiverAsync(job, settings, ct);
         job.AddTiming("szétbontás, olvasás és ellenőrzés", watch.Elapsed);
 
         // If the scan belongs to a company that is not configured, every buyer VAT check fails - re-reading would not help.

@@ -24,6 +24,7 @@ var verbose = args.Contains("--verbose");
 AppLog.EntryAdded += e => { if (verbose || e.Level >= LogLevel.Warning || e.Message.StartsWith("===")) Console.WriteLine(e); };
 
 if (Opt("--registry") is { } registryPath) CompanyRegistry.CachePath = registryPath;
+if (Opt("--local") is { } localDir) AppPaths.LocalDir = localDir;   // work folders and log elsewhere (tests)
 var styles = args[0] == "dump" ? new List<InvoiceStyle>() : JsonStore.LoadStyles(Opt("--styles"));
 var settings = JsonStore.LoadSettings(Opt("--settings"));
 
@@ -36,6 +37,8 @@ switch (args[0])
         var job = await InvoiceProcessor.RunAsync(args[1], styles, settings, progress, CancellationToken.None);
         JobCache.Save(job);
         Console.WriteLine($"Processed in {sw.Elapsed.TotalSeconds:0.0}s. Work dir: {job.WorkDir}");
+        Console.WriteLine($"Receiving company: {job.Receiver?.Name ?? "-"} {job.Receiver?.VatNumber}" +
+                          (job.Detection?.Suggestion is { } s ? $" | suggestion: {s.Name} {s.VatNumber} ({job.Detection.SuggestionPages}/{job.Detection.Pages} pages)" : ""));
         Finish(job);
         break;
     }
@@ -51,6 +54,7 @@ switch (args[0])
         var jobSettings = InvoiceProcessor.SettingsFor(job, settings);
         InvoiceProcessor.BuildDocuments(job, styles, jobSettings);
         await InvoiceProcessor.LookupIssuerNamesAsync(job, styles, jobSettings, null, CancellationToken.None);
+        await InvoiceProcessor.NameSuggestedReceiverAsync(job, settings, CancellationToken.None);
         if (!args.Contains("--no-refine"))
         {
             using var surya = await InvoiceProcessor.StartSuryaAsync(settings, null, CancellationToken.None);
@@ -60,6 +64,7 @@ switch (args[0])
         Console.WriteLine($"Receiving company: {job.Receiver?.Name ?? "-"} {job.Receiver?.VatNumber}" +
                           (job.Detection?.Suggestion is { } s ? $" | suggestion: {s.Name} {s.VatNumber} ({job.Detection.SuggestionPages}/{job.Detection.Pages} pages)" : ""));
         Finish(job);
+        if (Opt("--xlsx") is { } xlsx) PdfExporter.ExportReport(job, xlsx, jobSettings);
         break;
     }
     case "dates":

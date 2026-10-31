@@ -20,6 +20,7 @@
     <local:EnumVisibilityConverter x:Key="EnumVis" />
     <local:RegionTextConverter x:Key="RegionText" />
     <local:EnumTextConverter x:Key="EnumText" />
+    <local:HotkeyBadgeConverter x:Key="HotkeyBadge" />
 
     <SolidColorBrush x:Key="AccentBrush" Color="#6366F1" />
     <SolidColorBrush x:Key="AccentDarkBrush" Color="#4F46E5" />
@@ -94,11 +95,20 @@
                         <Border.RenderTransform>
                             <TranslateTransform x:Name="Lift" Y="0" />
                         </Border.RenderTransform>
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                            <TextBlock x:Name="Icon" Text="{TemplateBinding Tag}" FontFamily="{StaticResource IconFont}" FontSize="18"
-                                       HorizontalAlignment="Center" Foreground="{StaticResource AccentBrush}" Margin="0,0,0,4" />
-                            <ContentPresenter HorizontalAlignment="Center" TextBlock.TextAlignment="Center" />
-                        </StackPanel>
+                        <Grid>
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <TextBlock x:Name="Icon" Text="{TemplateBinding Tag}" FontFamily="{StaticResource IconFont}" FontSize="18"
+                                           HorizontalAlignment="Center" Foreground="{StaticResource AccentBrush}" Margin="0,0,0,4" />
+                                <ContentPresenter HorizontalAlignment="Center" TextBlock.TextAlignment="Center" />
+                            </StackPanel>
+                            <!-- Keyboard shortcut (local:Hotkey.Keys) in the corner -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-6,-5,0" IsHitTestVisible="False">
+                                <TextBlock Text="{Binding (local:Hotkey.Keys), RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource HotkeyBadge}, ConverterParameter=shift}"
+                                           FontFamily="Segoe UI Symbol" FontSize="13" Foreground="#94A3B8" VerticalAlignment="Center" Margin="0,0,1,0" />
+                                <TextBlock Text="{Binding (local:Hotkey.Keys), RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource HotkeyBadge}, ConverterParameter=key}"
+                                           FontSize="9.5" FontWeight="SemiBold" Foreground="#94A3B8" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
@@ -168,6 +178,43 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="#E0E7FF" />
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="#60A5FA" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- A small on/off switch with an icon (Tag), e.g. showing the boxes over the page. -->
+    <Style x:Key="ChipToggle" TargetType="ToggleButton">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="0,0,6,0" />
+        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="Foreground" Value="#475569" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="Bd" Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="11" Padding="8,2">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{TemplateBinding Tag}" FontFamily="{StaticResource IconFont}" FontSize="11"
+                                       VerticalAlignment="Center" Margin="0,0,5,0" />
+                            <ContentPresenter VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding (local:Hotkey.Keys), RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource HotkeyBadge}, ConverterParameter=shift}"
+                                       FontFamily="Segoe UI Symbol" FontSize="13" Foreground="#94A3B8" VerticalAlignment="Center" Margin="6,0,1,0" />
+                            <TextBlock Text="{Binding (local:Hotkey.Keys), RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource HotkeyBadge}, ConverterParameter=key}"
+                                       VerticalAlignment="Center" FontSize="9.5" FontWeight="SemiBold" Foreground="#94A3B8" />
+                        </StackPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#E0E7FF" />
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                            <Setter Property="Foreground" Value="{StaticResource AccentDarkBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Bd" Property="BorderBrush" Value="#60A5FA" />
                         </Trigger>
                     </ControlTemplate.Triggers>

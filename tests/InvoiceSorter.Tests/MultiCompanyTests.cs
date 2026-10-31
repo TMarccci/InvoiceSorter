@@ -58,6 +58,31 @@ public class MultiCompanyTests
         Assert.Null(d.Suggestion);
     }
 
+    /// <summary>A Számlázz.hu-like invoice: the supplier block has no label, the buyer block is under "VEVŐ:".</summary>
+    private static PageInfo ShortScanPage(int index, string supplierTax) => Page(index,
+        ("Alfa", 0.28, 0.04), ("Kft.", 0.33, 0.04), ("Adószám:", 0.28, 0.083), (supplierTax, 0.36, 0.083),
+        ("VEVŐ:", 0.077, 0.248), ("Mintavevő", 0.077, 0.267), ("Kft.", 0.16, 0.267), ("Adószám:", 0.077, 0.317), ("99991032-2-42", 0.15, 0.317));
+
+    [Fact]
+    public void ShortScanOfAnUnknownReceiverIsSuggested()
+    {
+        // Two invoices of two suppliers: the buyer's number is on both pages, under the buyer label.
+        var settings = Settings(("Minta Vevő 1926 Kft.", "99991018-2-41"));
+        var d = ReceiverDetector.Detect(new[] { ShortScanPage(0, "11223346-2-41"), ShortScanPage(1, "55667780-2-43") }, settings);
+        Assert.Null(d.Match);
+        Assert.Equal("99991032-2-42", d.Suggestion?.VatNumber);
+        Assert.Equal("Mintavevő Kft.", d.Suggestion!.Name);
+        Assert.Equal(2, d.SuggestionPages);
+
+        // One page is enough, when the number is under the buyer label ...
+        d = ReceiverDetector.Detect(new[] { ShortScanPage(0, "11223346-2-41") }, settings);
+        Assert.Equal("99991032-2-42", d.Suggestion?.VatNumber);
+
+        // ... but a number without a buyer label (here the supplier's) is never suggested from 1-2 pages.
+        var unlabelled = Page(0, ("Alfa", 0.28, 0.04), ("Kft.", 0.33, 0.04), ("Adószám:", 0.28, 0.083), ("11223346-2-41", 0.36, 0.083));
+        Assert.Null(ReceiverDetector.Detect(new[] { unlabelled }, settings).Suggestion);
+    }
+
     [Fact]
     public void TaxNumberCoreAcceptedOnlyWhenEnabled()
     {

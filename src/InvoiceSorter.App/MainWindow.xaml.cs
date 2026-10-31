@@ -11,12 +11,24 @@ public partial class MainWindow : Window
 {
     public MainViewModel ViewModel { get; }
 
+    private List<System.Windows.Controls.Primitives.ButtonBase> _hotkeyButtons = new();
+
+    /// <summary>The buttons with a keyboard shortcut (<see cref="Hotkey"/>).</summary>
+    internal IReadOnlyList<System.Windows.Controls.Primitives.ButtonBase> HotkeyButtons => _hotkeyButtons;
+
     public MainWindow()
     {
         InitializeComponent();
-        WindowFit.Attach(this);
+        WindowFit.Attach(this, f11: false);
         ViewModel = new MainViewModel();
         DataContext = ViewModel;
+
+        // F1-F11 and Shift+F1-F11: the action buttons of the review screen (F12: full screen, see WindowFit).
+        Loaded += (_, _) => _hotkeyButtons = Hotkey.Collect(this);
+        PreviewKeyDown += (_, e) =>
+        {
+            if (Hotkey.Gesture(e) is { } gesture && Hotkey.Press(_hotkeyButtons, gesture)) e.Handled = true;
+        };
 
         // Keep the log scrolled to the newest entry.
         ((INotifyCollectionChanged)LogList.Items).CollectionChanged += (_, e) =>

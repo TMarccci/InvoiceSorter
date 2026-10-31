@@ -49,18 +49,19 @@ public static class ReceiverDetector
             if (n > matchPages) { match = company; matchPages = n; }
         }
 
-        // A number on at least a fifth of the pages, clearly more often than the best configured receiver.
-        // A supplier that sent many invoices also has a frequent tax number - those are printed in the seller block.
+        // A number on at least a fifth of the pages (and on 3 pages, or every page of a short scan), clearly more often
+        // than the best configured receiver. A supplier that sent many invoices also has a frequent tax number - those
+        // are printed in the seller block. On 1-2 pages the count proves nothing: the number must be under a buyer label.
         ReceiverCompany? suggestion = null;
         int suggestionPages = 0;
         var top = pagesPerCore.Where(kv => configured.All(c => c.Tax!.Core != kv.Key))
                               .OrderByDescending(kv => kv.Value)
                               .Take(5)
-                              .FirstOrDefault(kv => !MostlySeller(content, kv.Key));
-        if (top.Key != null && top.Value >= Math.Max(3, content.Count / 5) && top.Value > matchPages * 2)
+                              .FirstOrDefault(kv => Block(content, kv.Key) is var (buyer, seller) && (kv.Value >= 3 ? seller <= buyer : buyer > seller));
+        if (top.Key != null && top.Value >= Math.Max(Math.Min(3, content.Count), content.Count / 5) && top.Value > matchPages * 2)
         {
             var full = fullPerCore.TryGetValue(top.Key, out var counts) ? counts.MaxBy(kv => kv.Value).Key : top.Key;
-            suggestion = new ReceiverCompany { Name = GuessName(content, top.Key) ?? "", VatNumber = full };
+            suggestion = new ReceiverCompany { Name = CompanyRegistry.CachedName(top.Key) ?? GuessName(content, top.Key) ?? "", VatNumber = full };
             suggestionPages = top.Value;
         }
         return new ReceiverDetection(match, matchPages, suggestion, suggestionPages, content.Count);
@@ -69,8 +70,8 @@ public static class ReceiverDetector
     private static readonly Regex BuyerLabel = new(@"vev|v[aá]s[aá]rl|megrendel|buyer|customer|el[oő]fizet|fizet[oő]", RegexOptions.IgnoreCase);
     private static readonly Regex SellerLabel = new(@"elad|sz[aá]ll[ií]t|kibocs|szolg[aá]ltat|seller|supplier", RegexOptions.IgnoreCase);
 
-    /// <summary>True when the tax number is printed under a seller label (Eladó, Szállító …) more often than under a buyer label.</summary>
-    private static bool MostlySeller(IEnumerable<PageInfo> pages, string core)
+    /// <summary>How often the tax number is printed under a buyer label (Vevő …) and under a seller label (Eladó, Szállító …).</summary>
+    private static (int Buyer, int Seller) Block(IEnumerable<PageInfo> pages, string core)
     {
         int buyer = 0, seller = 0;
         foreach (var page in pages)
@@ -83,7 +84,7 @@ public static class ReceiverDetector
             if (context.Any(BuyerLabel.IsMatch)) buyer++;
             else if (context.Any(SellerLabel.IsMatch)) seller++;
         }
-        return seller > buyer;
+        return (buyer, seller);
     }
 
     /// <summary>The company name printed above the tax number most often (a line with a legal form such as Kft.).</summary>

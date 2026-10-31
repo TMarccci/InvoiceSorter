@@ -84,6 +84,7 @@ public sealed class MainViewModel : ObservableObject
         OpenLogFolderCommand = new RelayCommand(() => OpenFolder(AppPaths.LogDir));
         ClearLogCommand = new RelayCommand(() => AllLogEntries.Clear());
         AddSuggestedReceiverCommand = new RelayCommand(AddSuggestedReceiver);
+        ExportExcelCommand = new AsyncRelayCommand(ExportExcelAsync, () => Job != null && !IsBusy);
 
         _clock = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _clock.Tick += (_, _) => UpdateClock();
@@ -309,30 +310,46 @@ public sealed class MainViewModel : ObservableObject
         : "";
 
     /// <summary>Adds the suggested company as receiving company and checks all invoices against it.</summary>
-    private void AddSuggestedReceiver()
+    private async void AddSuggestedReceiver()
     {
         if (Job?.Detection?.Suggestion is not { } s) return;
         var name = string.IsNullOrWhiteSpace(s.Name) ? $"Cég {s.VatNumber}" : s.Name;
         var answer = MessageBox.Show(Application.Current.MainWindow!,
-            $"Felveszed ezt a vevő céget?\n\n{name}\nAdószám: {s.VatNumber}\n\n(A nevét később a Beállításokban módosíthatod.)",
+            $"Felveszed ezt a vevő céget?\n\n{name}\nAdószám: {s.VatNumber}\n\n" +
+            (IsCentral ? "(A központi konfigurációba kerül, így minden gép megkapja. A nevét a szerverkezelőben módosíthatod.)"
+                       : "(A nevét később a Beállításokban módosíthatod.)"),
             "Vevő cég felvétele", MessageBoxButton.OKCancel, MessageBoxImage.Question);
         if (answer != MessageBoxResult.OK) return;
+        var job = Job;
         var company = new ReceiverCompany { Name = name, VatNumber = s.VatNumber };
         Settings.ReceiverCompanies.Add(company);
-        if (IsCentral)
-        {
-            // The list of receiving companies belongs to the central configuration: the server shares it with every computer.
-            _ = SendReceiversAsync(new[] { company });
-        }
-        else
+        if (!IsCentral)
         {
             SaveSettingsQuietly();
             AppLog.Info($"Vevő cég felvéve: {company.Name} {company.VatNumber}");
         }
-        Job.Receiver = company;
-        Job.Detection = Job.Detection with { Match = company, MatchPages = Job.Detection.SuggestionPages, Suggestion = null, SuggestionPages = 0 };
+        job.Receiver = company;
+        job.Detection = job.Detection! with { Match = company, MatchPages = job.Detection.SuggestionPages, Suggestion = null, SuggestionPages = 0 };
         OnReceiverChanged();
         RerunDetection();
+        if (!IsCentral) return;
+
+        // The list of receiving companies belongs to the central configuration: the server shares it with every computer.
+        if (!await SendReceiversAsync(new[] { company }))
+        {
+            MessageBox.Show(Application.Current.MainWindow!,
+                $"A(z) {name} nem került fel a központi szerverre (részletek a naplóban).\n\nErre a feldolgozásra érvényes marad; a szerverkezelőben veheted fel véglegesen.",
+                "Vevő cég felvétele", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        // The downloaded configuration has its own copy of the company: the scan points at the listed one.
+        if (job == Job && job.Receiver == company &&
+            Settings.ReceiverCompanies.FirstOrDefault(c => SameTaxNumber(c.VatNumber, company.VatNumber)) is { } listed && listed != company)
+        {
+            job.Receiver = listed;
+            job.Detection = job.Detection with { Match = listed };
+            OnReceiverChanged();
+        }
     }
 
     private void OnReceiverChanged()
@@ -595,6 +612,7 @@ public sealed class MainViewModel : ObservableObject
     public IRelayCommand OpenLogFolderCommand { get; }
     public IRelayCommand ClearLogCommand { get; }
     public IRelayCommand AddSuggestedReceiverCommand { get; }
+    public IAsyncRelayCommand ExportExcelCommand { get; }
 
     private void RefreshCommands()
     {
@@ -602,7 +620,7 @@ public sealed class MainViewModel : ObservableObject
                  {
                      BrowseSourceCommand, StartCommand, CancelCommand, RerunDetectionCommand, RereadDocumentCommand, SplitHereCommand,
                      MergeWithPreviousCommand, MovePageUpCommand, MovePageDownCommand, DeletePageCommand, RotateLeftCommand, RotateRightCommand, NextErrorCommand, GoToSaveCommand, BackToReviewCommand, BrowseOutputCommand, SaveCommand,
-                     OpenOutputFolderCommand, NewJobCommand,
+                     OpenOutputFolderCommand, NewJobCommand, ExportExcelCommand,
                  })
             c?.NotifyCanExecuteChanged();
     }
@@ -644,6 +662,13 @@ public sealed class MainViewModel : ObservableObject
     private DateTime _lastPreview;
     private int _feedRecognized, _feedBlank, _feedUnknown;
 
+    private PageInfo? _previewPage;
+    private InvoiceStyle? _previewStyle;
+
+    private void UpdatePreviewOverlays() =>
+        PreviewOverlays = _previewPage == null || !ShowPageBoxes ? Array.Empty<PageOverlay>()
+            : OverlayBuilder.Build(_previewPage, _previewStyle, Settings, showLines: true);
+
     /// <summary>The page that was just read, shown on the processing screen.</summary>
     public string? PreviewImage { get => _previewImage; private set => SetProperty(ref _previewImage, value); }
     public IReadOnlyList<PageOverlay> PreviewOverlays { get => _previewOverlays; private set => SetProperty(ref _previewOverlays, value); }
@@ -672,6 +697,7 @@ public sealed class MainViewModel : ObservableObject
         ProcessingFeed.Clear();
         _feedRecognized = _feedBlank = _feedUnknown = 0;
         PreviewImage = null;
+        _previewPage = null;
         PreviewOverlays = Array.Empty<PageOverlay>();
         PreviewTitle = PreviewDetail = "";
         OnPropertyChanged(nameof(FeedSummary));
@@ -785,7 +811,8 @@ public sealed class MainViewModel : ObservableObject
         if (page.IsBlank || (!retry && (DateTime.Now - _lastPreview).TotalMilliseconds < 250)) return;
         _lastPreview = DateTime.Now;
         PreviewImage = page.ImagePath;
-        PreviewOverlays = OverlayBuilder.Build(page, style, Settings, showLines: true);
+        (_previewPage, _previewStyle) = (page, style);
+        UpdatePreviewOverlays();
         PreviewTitle = $"{page.Number}. oldal" + (style != null ? $" · {style.Name}" : "");
         PreviewDetail = retry ? $"Újraolvasás: {p.Detail}" : $"{page.WordCount} szó felismerve" + (page.Rotation != 0 ? $", elforgatva {page.Rotation}°" : "");
     }
@@ -1205,10 +1232,39 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>Shows where the style reads the issuer and invoice number on the selected page.</summary>
     private void UpdateOverlays()
     {
-        PageOverlays = SelectedPage == null
+        PageOverlays = SelectedPage == null || !ShowPageBoxes
             ? Array.Empty<PageOverlay>()
-            : OverlayBuilder.Build(SelectedPage, SelectedDocument?.Style, JobSettings, showLines: false)
+            : OverlayBuilder.Build(SelectedPage, SelectedDocument?.Style, JobSettings, showLines: ShowAllTextBoxes)
                 .Concat(OverlayBuilder.Dates(SelectedDocument, SelectedPage)).ToList();
+    }
+
+    /// <summary>The boxes over the page on / off (F10); remembered on this computer.</summary>
+    public bool ShowPageBoxes
+    {
+        get => Settings.ShowPageBoxes;
+        set
+        {
+            if (Settings.ShowPageBoxes == value) return;
+            Settings.ShowPageBoxes = value;
+            OnPropertyChanged();
+            SaveSettingsQuietly();
+            UpdateOverlays();
+            UpdatePreviewOverlays();
+        }
+    }
+
+    /// <summary>In the review screen every recognized text line is outlined too (Shift+F6); remembered on this computer.</summary>
+    public bool ShowAllTextBoxes
+    {
+        get => Settings.ShowAllTextBoxes;
+        set
+        {
+            if (Settings.ShowAllTextBoxes == value) return;
+            Settings.ShowAllTextBoxes = value;
+            OnPropertyChanged();
+            SaveSettingsQuietly();
+            UpdateOverlays();
+        }
     }
 
     // ---------------------------------------------------------------- step 5: save
@@ -1269,7 +1325,8 @@ public sealed class MainViewModel : ObservableObject
                           (result.SavedWithErrors > 0 ? $", {result.SavedWithErrors} hibás a(z) „{settings.ErrorFolderName}” mappába" : "") +
                           (result.Excluded > 0 ? $", {result.Excluded} kizárva" : "") +
                           (result.Skipped > 0 ? $", {result.Skipped} kihagyva" : "") +
-                          $".\nJelentés: {Path.GetFileName(result.ReportPath)}";
+                          $".\nJelentés: {Path.GetFileName(result.ReportPath)}" +
+                          (result.ExcelPath.Length > 0 ? $", {Path.GetFileName(result.ExcelPath)}" : "");
         }
         catch (Exception ex)
         {
@@ -1280,6 +1337,44 @@ public sealed class MainViewModel : ObservableObject
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>
+    /// The report as an Excel workbook right now, without saving the invoices: the read values of every invoice and
+    /// the text the OCR engines read (every reading of every page).
+    /// </summary>
+    private async Task ExportExcelAsync()
+    {
+        if (Job == null) return;
+        var folder = Directory.Exists(OutputFolder) ? OutputFolder : Path.GetDirectoryName(Job.SourcePath) ?? "";
+        var dlg = new SaveFileDialog
+        {
+            Title = "Excel-jelentés mentése",
+            Filter = "Excel-munkafüzet (*.xlsx)|*.xlsx",
+            FileName = $"{Path.GetFileNameWithoutExtension(Job.SourcePath)}_{DateTime.Now:yyyyMMdd_HHmm}.xlsx",
+            InitialDirectory = Directory.Exists(folder) ? folder : "",
+        };
+        if (dlg.ShowDialog() != true) return;
+        var (job, settings, path) = (Job, Settings, dlg.FileName);
+        IsBusy = true;
+        try
+        {
+            await Task.Run(() => PdfExporter.ExportReport(job, path, settings));
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Az Excel-jelentés nem menthető", ex);
+            MessageBox.Show(Application.Current.MainWindow!, $"Az Excel-jelentés nem menthető:\n{ex.Message}\n\n(Ha a fájl nyitva van az Excelben, zárd be.)",
+                "Excel-export", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+        var answer = MessageBox.Show(Application.Current.MainWindow!, $"Az Excel-jelentés elkészült:\n{path}\n\nMegnyitod?",
+            "Excel-export", MessageBoxButton.YesNo, MessageBoxImage.Information);
+        if (answer == MessageBoxResult.Yes) Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
     }
 
     private void NewJob()
@@ -1360,7 +1455,8 @@ public sealed class MainViewModel : ObservableObject
         VatValidator.Parse(a)?.Core is { } x && x == VatValidator.Parse(b)?.Core;
 
     /// <summary>Central mode: receiving companies added on this computer go to the server, which shares them with every computer.</summary>
-    private async Task SendReceiversAsync(IReadOnlyList<ReceiverCompany> companies)
+    /// <returns>False when the server could not be reached or refused a company.</returns>
+    private async Task<bool> SendReceiversAsync(IReadOnlyList<ReceiverCompany> companies)
     {
         try
         {
@@ -1371,10 +1467,12 @@ public sealed class MainViewModel : ObservableObject
                 AppLog.Info($"Vevő cég felvéve a központi konfigurációba: {company.Name} {company.VatNumber}");
             }
             await SyncCentralAsync();
+            return true;
         }
         catch (Exception ex)
         {
             AppLog.Warn($"A vevő cég nem küldhető el a szervernek (erre a futásra érvényes marad): {ex.Message}");
+            return false;
         }
     }
 
