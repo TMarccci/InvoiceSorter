@@ -128,8 +128,8 @@ név). Egy kattintással átveheted őket; a forrás az egérmutató alatt láts
 **F9** forgatás jobbra · **F10** keretek be/ki · **F11** ez számla · **F12** teljes képernyő. A ritkábbak a Shift-tel:
 **Shift+F1** duplikátum megtartása · **Shift+F2** összevonás… · **Shift+F3 / F4** oldal fel / le · **Shift+F5** forgatás
 balra · **Shift+F6** minden felismert szöveg · **Shift+F7** törölt oldalak · **Shift+F8** OCR-szöveg · **Shift+F9** új
-sablon · **Shift+F11** Excel-export. A billentyű a gomb sarkában is látszik (⇧ = Shift); csak az éppen látható és
-használható gomb reagál, és szövegbeírás közben is működik (a beírt dátum vagy név előbb rögzül).
+sablon. A billentyű a gomb sarkában is látszik (⇧ = Shift); csak az éppen látható és használható gomb reagál (ha a
+dátumok ki vannak kapcsolva, az F3 sem), és szövegbeírás közben is működik (a beírt dátum vagy név előbb rögzül).
 
 A kézzel módosított számlák sárga sorral és ✎ jellel látszanak, és a jelentésben is szerepelnek. Az
 **Újrafelismerés** a teljes fájlt újra szétbontja a jelenlegi sablonokkal (a meglévő OCR-ből; a kézi módosítások
@@ -167,6 +167,12 @@ A hiányzó dátum alapértelmezés szerint hiba (a számla a hibás számlák k
 egy elrendezésnél az általános címkék tévednek, a sablonban saját dátumszabályt adhatsz meg (lásd
 [Sablonok](#sablonok)).
 
+**A dátumok teljesen ki is kapcsolhatók** (*Beállítások › Dátumok › Dátumok olvasása és ellenőrzése*; központi módban a
+szerverkezelő *Központi beállítások* ablakában, és akkor minden gépre érvényes). Kikapcsolva a program nem keres
+dátumot: az ellenőrző képernyőn nincs dátummező, *Kelte* oszlop és *Dátumok elfogadva* gomb, a dátumok miatt nincs
+hiba, pontlevonás és újraolvasás, a jelentésből pedig kimaradnak a dátumoszlopok. Ha egy nyitott feldolgozás közben
+változik a beállítás (pl. a központi konfiguráció frissül), a számlák dátumai azonnal ehhez igazodnak.
+
 ## Mentés
 
 Válaszd ki a célmappát, majd **Számlák mentése**.
@@ -181,8 +187,8 @@ Válaszd ki a célmappát, majd **Számlák mentése**.
   A fájlnévbe a dátumok nem kerülnek.
 - Az **Excel-jelentés** két munkalapos: a *Számlák* lapon a dátumok valódi dátumok (rendezhetők, szűrhetők), a
   pontszám szám; az *OCR-szöveg* lapon minden oldal minden olvasata külön sorban (olvasás, újraolvasások, Surya, a
-  felismert szavak számával). Mentés nélkül is kérhető: **Excel-export…** az ellenőrző képernyő tetején (Shift+F11),
-  illetve **Csak Excel-jelentés…** a mentés lépésben – ilyenkor a *Fájl* oszlop azt mutatja, hová kerülne a számla.
+  felismert szavak számával). Mentés nélkül is kérhető: **Csak Excel-jelentés…** a mentés lépésben – ilyenkor a
+  *Fájl* oszlop azt mutatja, hová kerülne a számla.
 - A kézzel javított kibocsátóneveket a program megjegyzi (központi módban a szerveren), így legközelebb automatikusan
   javítja.
 
@@ -233,7 +239,7 @@ A **Beállítások…** ablak oldalai:
 | **Windows OCR** | nyelv, felbontás, hibatűrés |
 | **Surya OCR** | mikor és hol fusson a Surya |
 | **Kibocsátók** | névjavítás, cégnév lekérdezése adószám alapján, ismert kibocsátók listája |
-| **Dátumok** | a kiállítás / teljesítés / határidő címkéi, a kizárt („nem számladátum”) címkék, az egydátumos fizetési módok; hiba-e a hiányzó dátum |
+| **Dátumok** | a dátumok olvasása be/ki; a kiállítás / teljesítés / határidő címkéi, a kizárt („nem számladátum”) címkék, az egydátumos fizetési módok; hiba-e a hiányzó dátum |
 | **Megbízhatóság** | az alacsony pontszám küszöbe; számítson-e hibának |
 | **Mentés** | fájlnévminta (`{InvoiceNumber}`, `{Issuer}`, `{Style}`, `{Number}`), hibás számlák almappája |
 

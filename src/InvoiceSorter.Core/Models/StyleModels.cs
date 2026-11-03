@@ -345,6 +345,12 @@ public sealed class AppSettings
     /// </summary>
     public List<string> SingleDateKeywords { get; set; } = DefaultSingleDateKeywords();
 
+    /// <summary>
+    /// The three dates are read and checked. Off: no date is looked for, the review screen and the report have no
+    /// dates, and a missing date is no reason for re-reading.
+    /// </summary>
+    public bool DatesEnabled { get; set; } = true;
+
     /// <summary>A missing date is an error (the invoice goes to the error list); otherwise only the trust score drops.</summary>
     public bool DatesRequired { get; set; } = true;
 

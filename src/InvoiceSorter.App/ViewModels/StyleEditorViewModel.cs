@@ -452,6 +452,7 @@ public sealed class StyleEditorViewModel : ObservableObject, IDisposable
     /// <summary>"kelte 2026.09.02. („Számla kelte” alatt) · teljesítés … · határidő –" for the current page.</summary>
     private string DescribeDates(InvoiceStyle style, PageInfo page, List<PageOverlay> overlays)
     {
+        if (!_settings.DatesEnabled) return "a dátumok olvasása ki van kapcsolva (Beállítások › Dátumok)";
         var doc = new InvoiceDocument { Style = style };
         doc.Pages.Add(page);
         DateReadResult dates;

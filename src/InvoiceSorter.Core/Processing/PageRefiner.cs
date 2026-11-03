@@ -71,7 +71,7 @@ public static class PageRefiner
               && (doc.VatApproved || InvoiceProcessor.CheckVat(doc.Pages, settings).Status == VatStatus.Valid)))
             return false;
         // The dates too: an invoice with a missing or undecidable date is re-read (a clearer reading may settle it).
-        if (!settings.DatesRequired || doc.DatesApproved) return true;
+        if (!settings.DatesEnabled || !settings.DatesRequired || doc.DatesApproved) return true;
         var dates = DateReader.Read(doc, settings);
         return dates.Issue.Value != null && dates.Fulfillment.Value != null && dates.Due.Value != null;
     }

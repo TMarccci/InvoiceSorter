@@ -193,6 +193,9 @@ public sealed class InvoiceDocument : ObservableObject
     /// <summary>Setting "a missing date is an error".</summary>
     public bool DatesRequired { get; set; } = true;
 
+    /// <summary>Setting "read and check the dates" (off: the invoice has no dates and no date problems).</summary>
+    public bool DatesEnabled { get; set; } = true;
+
     /// <summary>Where a date comes from: the source of the reading, or "kézzel" after a manual change.</summary>
     public string DateSource(DateKind kind)
     {

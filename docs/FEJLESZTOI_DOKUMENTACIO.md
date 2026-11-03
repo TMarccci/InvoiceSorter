@@ -122,6 +122,14 @@ Csak F1–F24 önmagában vagy Shifttel; a Shift+F10 szabadon marad (helyi menü
 (`WindowFit`, a főablakban az F11 nem). Az `ActionButton` / `ChipToggle` stílus a sarokban mutatja a billentyűt.
 A keretek láthatósága (`ShowPageBoxes`, `ShowAllTextBoxes`) gépenkénti beállítás (a `MergeCentral` megtartja).
 
+**Dátumok ki/be** (`AppSettings.DatesEnabled`, a központi konfiguráció része): kikapcsolva az
+`InvoiceProcessor.ReadDates` nem hívja a `DateReader.Read`-et (a `DateReading` null, a dátumok üresek,
+`InvoiceDocument.DatesEnabled = false`), így a `DateReader.Problems` / `Doubts` / `Suggestions` üres, a
+`TrustScorer` nem von le, a `PageRefiner.IsResolved` nem vár dátumra, az `InvoiceReport.ColumnsFor(false)` pedig a
+dátumoszlopok nélkül ír. A `MainViewModel.OnDatesSettingChanged` a beállítás változásakor (Beállítások, központi
+szinkron) a nyitott feldolgozás dátumait újraolvassa vagy törli. A régi szerver a típusos `AppSettings` miatt
+elhagyná az új mezőt – a szervert is frissíteni kell.
+
 ## Felismerési szabályok (pontosság)
 
 - **Fuzzy szövegegyezés** (`TextUtil.FuzzyContainsText`): az egész szöveg legfeljebb `FuzzyTolerance` (20 %) hibával,

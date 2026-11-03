@@ -41,11 +41,16 @@ public partial class MainWindow : Window
         {
             if (e.PropertyName == nameof(MainViewModel.SelectedDocument) && ViewModel.SelectedDocument != null)
                 DocumentsGrid.ScrollIntoView(ViewModel.SelectedDocument);
+            // A grid column is not in the visual tree, so it cannot bind to the view model.
+            if (e.PropertyName == nameof(MainViewModel.DatesEnabled)) ShowDateColumn();
         };
+        ShowDateColumn();
 
         // Central configuration and the new-version check run once the window is visible.
         ContentRendered += async (_, _) => await ViewModel.StartBackgroundChecksAsync();
     }
+
+    private void ShowDateColumn() => IssueDateColumn.Visibility = ViewModel.DatesEnabled ? Visibility.Visible : Visibility.Collapsed;
 
     private async void Update_Click(object sender, RoutedEventArgs e) => await ViewModel.InstallUpdateAsync();
 

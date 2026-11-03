@@ -239,7 +239,8 @@
                             <Border BorderBrush="SeaGreen" /><TextBlock Text="kibocsátó" />
                             <Border BorderBrush="RoyalBlue" /><TextBlock Text="számlaszám" />
                             <Border BorderBrush="DarkOrange" /><TextBlock Text="vevő adószáma" />
-                            <Border BorderBrush="#C026D3" /><TextBlock Text="dátum" />
+                            <Border BorderBrush="#C026D3" Visibility="{Binding DatesEnabled, Converter={StaticResource BoolToVis}}" />
+                            <TextBlock Text="dátum" Visibility="{Binding DatesEnabled, Converter={StaticResource BoolToVis}}" />
                             <Border BorderBrush="Gray" /><TextBlock Text="címke" />
                             <Border BorderBrush="Red" /><TextBlock Text="nem olvasható" />
                         </WrapPanel>
@@ -317,8 +318,6 @@
                 <Border Style="{StaticResource Card}" Padding="14,10" Margin="0,0,0,10">
                     <DockPanel>
                         <Button DockPanel.Dock="Right" Content="Tovább a mentéshez  →" Command="{Binding GoToSaveCommand}" Style="{StaticResource PrimaryButton}" />
-                        <Button DockPanel.Dock="Right" Content="Excel-export…" Command="{Binding ExportExcelCommand}" Margin="0,0,8,0" local:Hotkey.Keys="Shift+F11"
-                                ToolTip="Excel-jelentés most, mentés nélkül: a számlák adatai és az OCR által kiolvasott szöveg (oldalanként, minden olvasat)" />
                         <!-- Wraps to a second row on a small screen instead of sliding under the buttons on the right. -->
                         <WrapPanel VerticalAlignment="Center">
                             <TextBlock VerticalAlignment="Center" FontSize="14" Margin="0,3">
@@ -429,7 +428,7 @@
                                 <DataGridTextColumn Header="Sablon" Binding="{Binding StyleName}" Width="120" />
                                 <DataGridTextColumn Header="Kibocsátó" Binding="{Binding Issuer}" Width="160" />
                                 <DataGridTextColumn Header="Számlaszám" Binding="{Binding InvoiceNumber}" Width="130" />
-                                <DataGridTextColumn Header="Kelte" Binding="{Binding IssueDate}" Width="88" />
+                                <DataGridTextColumn x:Name="IssueDateColumn" Header="Kelte" Binding="{Binding IssueDate}" Width="88" />
                                 <DataGridTextColumn Header="Vevő adószáma" Binding="{Binding VatText}" Width="130" />
                                 <DataGridTemplateColumn Header="Pont" Width="70" SortMemberPath="Trust">
                                     <DataGridTemplateColumn.CellTemplate>
@@ -583,8 +582,10 @@
                                     </ItemsControl>
 
                                     <!-- The three dates: typed (not a calendar), with where they were read and the other dates of the invoice -->
-                                    <TextBlock Grid.Row="5" Text="Dátumok" Style="{StaticResource FieldLabel}" VerticalAlignment="Top" Margin="0,2,12,0" />
-                                    <Grid Grid.Row="5" Grid.Column="1" Margin="0,0,0,6">
+                                    <TextBlock Grid.Row="5" Text="Dátumok" Style="{StaticResource FieldLabel}" VerticalAlignment="Top" Margin="0,2,12,0"
+                                               Visibility="{Binding DataContext.DatesEnabled, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}" />
+                                    <Grid Grid.Row="5" Grid.Column="1" Margin="0,0,0,6"
+                                          Visibility="{Binding DataContext.DatesEnabled, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="0" />
@@ -740,6 +741,7 @@
                                             <ToggleButton Style="{StaticResource ToggleAction}" Tag="&#xE73E;" Content="Adószám&#x0a;elfogadva" IsChecked="{Binding VatApproved}" local:Hotkey.Keys="F2"
                                                           ToolTip="Ellenőriztem: a számla elfogadható, bár a vevő adószámát nem sikerült automatikusan igazolni" />
                                             <ToggleButton Style="{StaticResource ToggleAction}" Tag="&#xE787;" Content="Dátumok&#x0a;elfogadva" IsChecked="{Binding DatesApproved}" local:Hotkey.Keys="F3"
+                                                          Visibility="{Binding DataContext.DatesEnabled, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"
                                                           ToolTip="Ellenőriztem: a dátumok így helyesek (szokatlan sorrend, régi dátum, vagy a számlán nem szereplő dátum is)" />
                                             <ToggleButton Style="{StaticResource ToggleAction}" Tag="&#xE8A5;" Content="Ez számla" IsChecked="{Binding IsInvoiceConfirmed}" local:Hotkey.Keys="F11"
                                                           Visibility="{Binding IsNonInvoice, Converter={StaticResource BoolToVis}}"

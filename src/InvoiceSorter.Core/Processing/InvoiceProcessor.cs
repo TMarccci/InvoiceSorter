@@ -286,7 +286,8 @@ public static class InvoiceProcessor
         foreach (var d in job.Documents)
         {
             var msg = $"{d.Number}. számla, oldal: {d.PageRange} | megbízhatóság {d.Trust} | sablon: {d.StyleName} | kibocsátó: '{d.Issuer}' | szám: '{d.InvoiceNumber}' | " +
-                      $"kelte: {Or(d.IssueDate)}, teljesítés: {Or(d.FulfillmentDate)}, határidő: {Or(d.DueDate)} | adószám: {d.Vat.Message}";
+                      (settings.DatesEnabled ? $"kelte: {Or(d.IssueDate)}, teljesítés: {Or(d.FulfillmentDate)}, határidő: {Or(d.DueDate)} | " : "") +
+                      $"adószám: {d.Vat.Message}";
             if (d.HasErrors) AppLog.Warn(msg + " | HIBÁK: " + d.ErrorsText);
             else AppLog.Info(msg);
         }
@@ -416,6 +417,14 @@ public static class InvoiceProcessor
     /// <summary>The three dates; a date the user typed is kept (re-reading after a split, merge or rotation).</summary>
     public static void ReadDates(InvoiceDocument doc, AppSettings settings)
     {
+        doc.DatesEnabled = settings.DatesEnabled;
+        if (!settings.DatesEnabled)
+        {
+            // Dates switched off: none is looked for, and none is left from an earlier reading.
+            doc.DateReading = null;
+            foreach (var kind in new[] { DateKind.Issue, DateKind.Fulfillment, DateKind.Due }) doc.SetDate(kind, "");
+            return;
+        }
         var dates = DateReader.Read(doc, settings);
         doc.DateReading = dates;
         doc.DatesRequired = settings.DatesRequired;

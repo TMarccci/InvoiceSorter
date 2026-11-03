@@ -18,6 +18,15 @@ public static class InvoiceReport
 
     private static readonly double[] Widths = { 7, 9, 9, 8, 22, 30, 20, 12, 12, 12, 22, 40, 50, 24, 50, 40, 60, 60 };
 
+    /// <summary>The columns left out when the dates are switched off (Beállítások › Dátumok).</summary>
+    private static readonly HashSet<string> DateColumns = new() { "Kiállítás dátuma", "Teljesítés dátuma", "Fizetési határidő", "Dátumok forrása" };
+
+    /// <summary>The columns of the report (without the dates when they are switched off).</summary>
+    public static IReadOnlyList<string> ColumnsFor(bool dates) => Pick(Columns, dates);
+
+    private static T[] Pick<T>(IReadOnlyList<T> values, bool dates) =>
+        dates ? values.ToArray() : values.Where((_, i) => !DateColumns.Contains(Columns[i])).ToArray();
+
     public const string WindowsEngine = "Windows", SuryaEngine = "Surya";
 
     /// <summary>The values of an invoice (dates as DateTime when they are complete dates, for Excel).</summary>
@@ -55,12 +64,13 @@ public static class InvoiceReport
 
     public static string EngineName(string engine) => engine == SuryaEngine ? "Surya" : "Windows OCR";
 
-    public static void WriteCsv(string path, IEnumerable<(InvoiceDocument Doc, string File)> invoices)
+    /// <param name="dates">The dates are read (Beállítások › Dátumok); otherwise their columns are left out.</param>
+    public static void WriteCsv(string path, IEnumerable<(InvoiceDocument Doc, string File)> invoices, bool dates = true)
     {
         var sb = new StringBuilder();
-        sb.AppendLine(string.Join(";", Columns));
+        sb.AppendLine(string.Join(";", ColumnsFor(dates)));
         foreach (var (doc, file) in invoices)
-            sb.AppendLine(string.Join(";", Row(doc, file).Select(v => Csv(v switch
+            sb.AppendLine(string.Join(";", Pick(Row(doc, file), dates).Select(v => Csv(v switch
             {
                 DateTime d => DateReader.Format(DateOnly.FromDateTime(d)),
                 null => "",
@@ -70,9 +80,10 @@ public static class InvoiceReport
     }
 
     /// <summary>Sheet "Számlák" (one row per invoice) and sheet "OCR-szöveg" (every reading of every page).</summary>
-    public static void WriteXlsx(string path, IReadOnlyList<(InvoiceDocument Doc, string File)> invoices)
+    /// <param name="dates">The dates are read (Beállítások › Dátumok); otherwise their columns are left out.</param>
+    public static void WriteXlsx(string path, IReadOnlyList<(InvoiceDocument Doc, string File)> invoices, bool dates = true)
     {
-        var rows = invoices.Select(x => Row(x.Doc, x.File)).ToList();
+        var rows = invoices.Select(x => Pick(Row(x.Doc, x.File), dates)).ToList();
         var readings = new List<object?[]>();
         foreach (var (doc, _) in invoices)
         foreach (var page in doc.Pages)
@@ -86,7 +97,7 @@ public static class InvoiceReport
         }
         XlsxWriter.Write(path, new[]
         {
-            new XlsxSheet("Számlák", Columns, rows, Widths),
+            new XlsxSheet("Számlák", ColumnsFor(dates), rows, Pick(Widths, dates)),
             new XlsxSheet("OCR-szöveg", new[] { "Számla", "Oldal", "Olvasat", "OCR-motor", "Szavak", "Szöveg" }, readings, new double[] { 7, 7, 15, 13, 8, 120 }),
         });
     }

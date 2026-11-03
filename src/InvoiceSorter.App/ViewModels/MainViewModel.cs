@@ -49,6 +49,7 @@ public sealed class MainViewModel : ObservableObject
         Styles = new ObservableCollection<InvoiceStyle>();
         LoadConfiguration();
         _outputFolder = Settings.LastOutputFolder;
+        _datesRead = Settings.DatesEnabled;
 
         AppLog.EntryAdded += OnLogEntry;
         foreach (var e in AppLog.EntriesSince(DateTime.Today)) AllLogEntries.Add(e);
@@ -194,6 +195,7 @@ public sealed class MainViewModel : ObservableObject
                 SetStyles(config.Styles);
                 OnPropertyChanged(nameof(Settings));
                 OnReceiverChanged();
+                OnDatesSettingChanged();
                 AppLog.Info(first
                     ? $"Központi konfiguráció letöltve ({config.Revision}. változat, {config.Styles.Count} sablon)"
                     : $"A központi konfiguráció frissült: {config.Revision}. változat ({config.UpdatedBy}, {config.UpdatedAt:yyyy.MM.dd HH:mm})");
@@ -283,6 +285,28 @@ public sealed class MainViewModel : ObservableObject
     }
 
     public string SourceInfo { get => _sourceInfo; set => SetProperty(ref _sourceInfo, value); }
+
+    // ---------------------------------------------------------------- dates on / off
+
+    private bool _datesRead;
+
+    /// <summary>The dates are read and checked (Beállítások › Dátumok; in central mode the server's setting).</summary>
+    public bool DatesEnabled => Settings.DatesEnabled;
+
+    /// <summary>The dates were switched on or off (settings window, central configuration): the open scan follows.</summary>
+    private void OnDatesSettingChanged()
+    {
+        OnPropertyChanged(nameof(DatesEnabled));
+        if (Settings.DatesEnabled == _datesRead) return;
+        _datesRead = Settings.DatesEnabled;
+        AppLog.Info(_datesRead ? "A dátumok olvasása bekapcsolva" : "A dátumok olvasása kikapcsolva");
+        if (Job == null) return;
+        var job = Job;
+        var settings = JobSettings;
+        RunProgrammatic(() => { foreach (var d in job.Documents) InvoiceProcessor.ReadDates(d, settings); });
+        InvoiceProcessor.ScoreAll(job, settings);
+        AfterDocumentEdit();
+    }
 
     // ---------------------------------------------------------------- receiving company of the scan
 
@@ -1430,6 +1454,7 @@ public sealed class MainViewModel : ObservableObject
         }
         OnPropertyChanged(nameof(Settings));
         OnReceiverChanged();
+        OnDatesSettingChanged();
         OnPropertyChanged(nameof(ProposedFileName));
         AppLog.Info("Beállítások mentve");
         if (modeChanged && IsCentral) await SyncCentralAsync(force: true);

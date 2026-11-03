@@ -714,7 +714,7 @@ public static class DateReader
     public static List<string> Problems(InvoiceDocument doc)
     {
         var problems = new List<string>();
-        if (doc.Excluded || doc.DatesApproved) return problems;
+        if (doc.Excluded || doc.DatesApproved || !doc.DatesEnabled) return problems;
         var missing = new List<string>();
         var ambiguous = new List<string>();
         foreach (var kind in new[] { DateKind.Issue, DateKind.Fulfillment, DateKind.Due })
@@ -771,7 +771,7 @@ public static class DateReader
     public static List<(int Points, string Reason)> Doubts(InvoiceDocument doc)
     {
         var doubts = new List<(int, string)>();
-        if (doc.Excluded || doc.DatesApproved) return doubts;
+        if (doc.Excluded || doc.DatesApproved || !doc.DatesEnabled) return doubts;
         var issue = Parse(doc.IssueDate);
         var fulfil = Parse(doc.FulfillmentDate);
         var due = Parse(doc.DueDate);

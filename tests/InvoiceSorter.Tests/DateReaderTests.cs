@@ -388,5 +388,36 @@ public class DateReaderTests
         Assert.Contains("Számla kelte", old.IssueDateLabels);
         Assert.Contains("Teljesítési időszak", old.NotDateLabels);
         Assert.True(old.DatesRequired);
+        Assert.True(old.DatesEnabled);
+    }
+
+    [Fact]
+    public void SwitchedOffDatesAreNotReadNotCheckedAndNotReported()
+    {
+        // The same page as above: with dates on it has a date and a "missing date" error.
+        var page = Page(
+            W("Teljesítés", 0.57, 0.124), W("kelte:", 0.63, 0.124), W("I", 0.69, 0.124),
+            W("Számla", 0.57, 0.137), W("kelte:", 0.615, 0.137), W(D(30), 0.67, 0.137));
+        var off = Settings();
+        off.DatesEnabled = false;
+        var doc = Doc(page, settings: off);
+        Assert.Null(doc.DateReading);
+        Assert.Equal("", doc.IssueDate);
+        Assert.Empty(DateReader.Problems(doc));
+        Assert.Empty(DateReader.Doubts(doc));
+        Assert.Empty(DateReader.Suggestions(doc, DateKind.Issue));
+        TrustScorer.Score(doc, off);
+        Assert.DoesNotContain(doc.TrustReasons, r => r.Contains("dátum"));
+
+        // Switched on again (e.g. in the central configuration): the dates are read again.
+        InvoiceProcessor.ReadDates(doc, Settings());
+        Assert.Equal(Hu(30), doc.IssueDate);
+        Assert.NotEmpty(DateReader.Problems(doc));
+
+        // The report has no date columns then.
+        Assert.DoesNotContain("Kiállítás dátuma", InvoiceReport.ColumnsFor(dates: false));
+        Assert.DoesNotContain("Dátumok forrása", InvoiceReport.ColumnsFor(dates: false));
+        Assert.Equal(InvoiceReport.Columns.Length - 4, InvoiceReport.ColumnsFor(dates: false).Count);
+        Assert.Contains("Fizetési határidő", InvoiceReport.ColumnsFor(dates: true));
     }
 }

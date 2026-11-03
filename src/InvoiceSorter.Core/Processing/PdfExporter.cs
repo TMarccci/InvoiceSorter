@@ -43,7 +43,7 @@ public static class PdfExporter
     /// <summary>The report of the scan as an Excel workbook, without saving the invoices (the "Fájl" column shows where they would go).</summary>
     public static void ExportReport(InvoiceJob job, string xlsxPath, AppSettings settings)
     {
-        InvoiceReport.WriteXlsx(xlsxPath, job.Documents.Select(d => (d, PlannedFile(d, settings))).ToList());
+        InvoiceReport.WriteXlsx(xlsxPath, job.Documents.Select(d => (d, PlannedFile(d, settings))).ToList(), settings.DatesEnabled);
         AppLog.Info($"Excel-jelentés mentve ({job.Documents.Count} számla): {xlsxPath}");
     }
 
@@ -104,11 +104,11 @@ public static class PdfExporter
 
         var stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
         var reportPath = Path.Combine(outputDir, $"_report_{stamp}.csv");
-        InvoiceReport.WriteCsv(reportPath, report);
+        InvoiceReport.WriteCsv(reportPath, report, settings.DatesEnabled);
         var excelPath = Path.Combine(outputDir, $"_report_{stamp}.xlsx");
         try
         {
-            InvoiceReport.WriteXlsx(excelPath, report);
+            InvoiceReport.WriteXlsx(excelPath, report, settings.DatesEnabled);
         }
         catch (Exception ex)
         {

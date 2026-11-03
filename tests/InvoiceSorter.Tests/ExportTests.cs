@@ -82,6 +82,12 @@ public class ExportTests
             Assert.Equal(InvoiceReport.Columns, header);
             Assert.Contains(";2026.09.02.;", text);
             Assert.Contains("\"--- 1. oldal ---\nAlfa Kft.", text);
+
+            // Dates switched off: no date columns, the other values stay in their columns.
+            InvoiceReport.WriteCsv(path, new[] { (Invoice(), "A-100_Alfa Kft.pdf") }, dates: false);
+            var noDates = File.ReadAllText(path);
+            Assert.Equal(InvoiceReport.ColumnsFor(dates: false), noDates[..noDates.IndexOf('\n')].TrimEnd('\r').Split(';'));
+            Assert.DoesNotContain("2026.09.02.", noDates);
         }
         finally
         {

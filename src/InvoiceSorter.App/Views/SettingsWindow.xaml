@@ -506,6 +506,15 @@
                                Text="A kiállítás dátuma, a teljesítés dátuma és a fizetési határidő a címkéjük alapján kerül a helyére: a dátum előtt ugyanabban a sorban, vagy felette oszlopfejlécként álló címke dönt. Ha a címkék ellentmondanak egymásnak, vagy több eltérő dátum szerepel, a mező üres marad, és a talált dátumok javaslatként jelennek meg. Soronként egy címke; a kisebb OCR-hibákat elviseli." />
                     <Border Style="{StaticResource Section}">
                         <StackPanel>
+                            <CheckBox x:Name="DatesEnabledBox" IsChecked="{Binding Settings.DatesEnabled}" Margin="0,0,0,4">
+                                <TextBlock TextWrapping="Wrap" FontWeight="SemiBold" Text="Dátumok olvasása és ellenőrzése" />
+                            </CheckBox>
+                            <TextBlock Style="{StaticResource Muted}" Margin="28,0,0,0" TextWrapping="Wrap"
+                                       Text="Kikapcsolva a program nem keres dátumot: a hibák ellenőrzésénél nem jelennek meg a dátummezők, a dátumgondok nem hibák és nem vonnak le pontot, miattuk nincs újraolvasás, és a jelentésből is kimaradnak a dátumoszlopok. Központi módban ez minden gépre érvényes." />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Section}" IsEnabled="{Binding IsChecked, ElementName=DatesEnabledBox}">
+                        <StackPanel>
                             <CheckBox IsChecked="{Binding Settings.DatesRequired}" Margin="0,0,0,4">
                                 <TextBlock TextWrapping="Wrap" Text="A hiányzó dátum hibának számít (a számla a hibás számlák közé kerül, amíg meg nem adod)" />
                             </CheckBox>
@@ -513,7 +522,7 @@
                                        Text="Kikapcsolva csak a megbízhatóság csökken. A nem eldönthető, érvénytelen vagy valószínűtlen dátum (pl. a határidő korábbi, mint a kiállítás) mindig hiba." />
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource Section}">
+                    <Border Style="{StaticResource Section}" IsEnabled="{Binding IsChecked, ElementName=DatesEnabledBox}">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -536,7 +545,7 @@
                             </StackPanel>
                         </Grid>
                     </Border>
-                    <Border Style="{StaticResource Section}">
+                    <Border Style="{StaticResource Section}" IsEnabled="{Binding IsChecked, ElementName=DatesEnabledBox}">
                         <StackPanel>
                             <TextBlock Text="Nem számladátumok" Style="{StaticResource SubTitle}" />
                             <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,6" TextWrapping="Wrap"
@@ -544,7 +553,7 @@
                             <TextBox Text="{Binding NotDateLabels}" AcceptsReturn="True" Height="120" VerticalScrollBarVisibility="Auto" />
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource Section}">
+                    <Border Style="{StaticResource Section}" IsEnabled="{Binding IsChecked, ElementName=DatesEnabledBox}">
                         <StackPanel>
                             <TextBlock Text="Egydátumos számlák (fizetési mód)" Style="{StaticResource SubTitle}" />
                             <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,6" TextWrapping="Wrap"
@@ -552,7 +561,8 @@
                             <TextBox Text="{Binding SingleDateKeywords}" AcceptsReturn="True" Height="90" VerticalScrollBarVisibility="Auto" />
                         </StackPanel>
                     </Border>
-                    <Button Content="Alapértelmezett címkék visszaállítása" Click="ResetDateLabels_Click" HorizontalAlignment="Left" Margin="0,0,0,12" />
+                    <Button Content="Alapértelmezett címkék visszaállítása" Click="ResetDateLabels_Click" HorizontalAlignment="Left" Margin="0,0,0,12"
+                            IsEnabled="{Binding IsChecked, ElementName=DatesEnabledBox}" />
                 </StackPanel>
 
                 <!-- 8: Trust score -->
