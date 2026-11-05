@@ -129,55 +129,62 @@ public sealed class PageAnalyzer : IDisposable
 
         var upright = await DecodeAsync(decoder, BitmapRotation.None);
         page.InkRatio = ComputeInkRatio(upright);
-        page.IsBlank = page.InkRatio < settings.BlankInkThreshold;
+        bool pale = page.InkRatio < settings.BlankInkThreshold;   // blank, or printed too faintly to count as ink
 
-        if (page.IsBlank)
+        ct.ThrowIfCancellationRequested();
+        var engine = RentEngine();
+        try
         {
-            AppLog.Debug($"Page {page.Number}: blank (ink {page.InkRatio:P3})");
-        }
-        else
-        {
-            ct.ThrowIfCancellationRequested();
-            var engine = RentEngine();
-            try
+            var result = await RecognizeFittedAsync(engine, upright);
+            int rotation = 0;
+            int score = QualityScore(result.Result);
+
+            // Pages scanned sideways/upside down produce mostly garbage words: try the other orientations.
+            if (settings.AutoRotate && score < 40 && !(pale && result.Lines.Count == 0))
             {
-                var result = await RecognizeFittedAsync(engine, upright);
-                int rotation = 0;
-                int score = QualityScore(result.Result);
-
-                // Pages scanned sideways/upside down produce mostly garbage words: try the other orientations.
-                if (settings.AutoRotate && score < 40)
+                foreach (var (rot, deg) in new[] { (BitmapRotation.Clockwise90Degrees, 90), (BitmapRotation.Clockwise270Degrees, 270), (BitmapRotation.Clockwise180Degrees, 180) })
                 {
-                    foreach (var (rot, deg) in new[] { (BitmapRotation.Clockwise90Degrees, 90), (BitmapRotation.Clockwise270Degrees, 270), (BitmapRotation.Clockwise180Degrees, 180) })
+                    ct.ThrowIfCancellationRequested();
+                    var candidate = await DecodeAsync(decoder, rot);
+                    var r = await RecognizeFittedAsync(engine, candidate);
+                    var s = QualityScore(r.Result);
+                    if (s > score * 1.5 && s >= 10)
                     {
-                        ct.ThrowIfCancellationRequested();
-                        var candidate = await DecodeAsync(decoder, rot);
-                        var r = await RecognizeFittedAsync(engine, candidate);
-                        var s = QualityScore(r.Result);
-                        if (s > score * 1.5 && s >= 10)
-                        {
-                            upright.Dispose();
-                            upright = candidate;
-                            result = r;
-                            score = s;
-                            rotation = deg;
-                        }
-                        else
-                        {
-                            candidate.Dispose();
-                        }
+                        upright.Dispose();
+                        upright = candidate;
+                        result = r;
+                        score = s;
+                        rotation = deg;
                     }
-                    if (rotation != 0) AppLog.Info($"{page.Number}. oldal: automatikusan elforgatva {rotation}°-kal");
+                    else
+                    {
+                        candidate.Dispose();
+                    }
                 }
+            }
 
+            page.IsBlank = pale && IsBlankPalePage(score, string.Join(" ", result.Lines.Select(l => l.Text)));
+            if (pale) AppLog.Debug($"Page {page.Number}: nothing dark (ink {page.InkRatio:P3}), {score} readable words: {(page.IsBlank ? "blank" : "pale print, kept")}");
+            if (!page.IsBlank)
+            {
+                if (rotation != 0) AppLog.Info($"{page.Number}. oldal: automatikusan elforgatva {rotation}°-kal");
                 page.Rotation = rotation;
                 page.Lines = result.Lines;
             }
-            finally
+            else if (rotation != 0)
             {
-                _engines.Add(engine);
+                // A blank page stays as it was scanned.
+                upright.Dispose();
+                upright = await DecodeAsync(decoder, BitmapRotation.None);
             }
         }
+        finally
+        {
+            _engines.Add(engine);
+        }
+
+        // Pale print reads much better enlarged and with more contrast (the receiving company is detected before any re-reading).
+        if (pale && !page.IsBlank) page.ExtraReadings.Add(await ReadRenderedAsync(page, settings.RenderDpi * 2, Enhancement.Contrast));
 
         page.PixelWidth = upright.PixelWidth;
         page.PixelHeight = upright.PixelHeight;
@@ -325,6 +332,22 @@ public sealed class PageAnalyzer : IDisposable
         var transform = new BitmapTransform { Rotation = rotation };
         return await decoder.GetSoftwareBitmapAsync(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied,
             transform, ExifOrientationMode.IgnoreExifOrientation, ColorManagementMode.DoNotColorManage);
+    }
+
+    /// <summary>Readable words that make a page without dark pixels a page (measured: show-through and logos at most 19, pale invoices 140+).</summary>
+    private const int MinWordsOnPalePage = 30;
+
+    /// <summary>
+    /// A page with next to no dark pixels is only blank if the OCR agrees: pale print (carbon copies, dot matrix copies)
+    /// has no dark pixels either. On really blank pages the OCR reads nothing or a few garbage words from the
+    /// show-through. The coloured notice on the back of thermal paper ("A hőpapír pénztárgép vagy taxaméter
+    /// hőnyomtatóban használható …") is readable, but no content: a receipt must not get it as a page.
+    /// </summary>
+    public static bool IsBlankPalePage(int readableWords, string text)
+    {
+        if (readableWords < MinWordsOnPalePage) return true;
+        var compact = TextUtil.Compact(text);
+        return compact.Contains("hopapir") && (compact.Contains("penztargep") || compact.Contains("taxameter"));
     }
 
     /// <summary>Share of dark pixels, ignoring a margin (scanner edges, punch holes).</summary>

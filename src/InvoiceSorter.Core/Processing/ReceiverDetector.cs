@@ -49,16 +49,17 @@ public static class ReceiverDetector
             if (n > matchPages) { match = company; matchPages = n; }
         }
 
-        // A number on at least a fifth of the pages (and on 3 pages, or every page of a short scan), clearly more often
-        // than the best configured receiver. A supplier that sent many invoices also has a frequent tax number - those
-        // are printed in the seller block. On 1-2 pages the count proves nothing: the number must be under a buyer label.
+        // A number on at least a fifth of the pages (and on 3 pages, or half of a short scan: often only the first page
+        // of an invoice has it), clearly more often than the best configured receiver. A supplier that sent many invoices
+        // also has a frequent tax number - those are printed in the seller block. On 1-2 pages the count proves nothing:
+        // the number must be under a buyer label.
         ReceiverCompany? suggestion = null;
         int suggestionPages = 0;
         var top = pagesPerCore.Where(kv => configured.All(c => c.Tax!.Core != kv.Key))
                               .OrderByDescending(kv => kv.Value)
                               .Take(5)
                               .FirstOrDefault(kv => Block(content, kv.Key) is var (buyer, seller) && (kv.Value >= 3 ? seller <= buyer : buyer > seller));
-        if (top.Key != null && top.Value >= Math.Max(Math.Min(3, content.Count), content.Count / 5) && top.Value > matchPages * 2)
+        if (top.Key != null && top.Value >= Math.Max(Math.Min(3, (content.Count + 1) / 2), content.Count / 5) && top.Value > matchPages * 2)
         {
             var full = fullPerCore.TryGetValue(top.Key, out var counts) ? counts.MaxBy(kv => kv.Value).Key : top.Key;
             suggestion = new ReceiverCompany { Name = CompanyRegistry.CachedName(top.Key) ?? GuessName(content, top.Key) ?? "", VatNumber = full };
@@ -74,13 +75,14 @@ public static class ReceiverDetector
     private static (int Buyer, int Seller) Block(IEnumerable<PageInfo> pages, string core)
     {
         int buyer = 0, seller = 0;
-        foreach (var page in pages)
-        foreach (var line in page.Lines.Where(l => l.Words.Count > 0))
+        foreach (var reading in pages.SelectMany(p => p.Readings))
+        foreach (var line in reading.Lines.Where(l => l.Words.Count > 0))
         {
             if (!Regex.Replace(line.Text, @"\D", "").Contains(core[..6])) continue;
             double x = line.Words[0].X, y = line.Words.Min(w => w.Y);
-            var context = page.Lines.Where(l => l.Words.Count > 0 && Math.Abs(l.Words[0].X - x) < 0.15 && y - l.Words.Min(w => w.Y) is >= 0 and < 0.15)
-                                    .Select(l => l.Text).ToList();
+            // The label may be further left: dotted leaders ("Adóig.szám . . .: 123") split a row into two OCR lines.
+            var context = reading.Lines.Where(l => l.Words.Count > 0 && l.Words[0].X - x is > -0.2 and < 0.15 && y - l.Words.Min(w => w.Y) is >= 0 and < 0.15)
+                                       .Select(l => l.Text).ToList();
             if (context.Any(BuyerLabel.IsMatch)) buyer++;
             else if (context.Any(SellerLabel.IsMatch)) seller++;
         }

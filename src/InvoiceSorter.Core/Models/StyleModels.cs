@@ -235,7 +235,7 @@ public sealed class AppSettings
     public bool AutoRotate { get; set; } = true;
 
     public bool RemoveBlankPages { get; set; } = true;
-    /// <summary>A page whose share of dark pixels is below this value is blank.</summary>
+    /// <summary>A page whose share of dark pixels is below this value is blank, unless the OCR reads text on it (pale print).</summary>
     public double BlankInkThreshold { get; set; } = 0.0005;
 
     /// <summary>A page containing any of these words never starts a new invoice.</summary>

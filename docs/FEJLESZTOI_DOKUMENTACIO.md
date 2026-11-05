@@ -93,7 +93,12 @@ InvoiceSorterServerManager.exe --data D:\proba\szerver --screenshots D:\kepek
 ## A feldolgozás menete
 
 1. **Renderelés + OCR** (`PageAnalyzer`): oldalanként kép (`Work\<futás>\page_NNN.jpg`) és szavak koordinátákkal;
-   párhuzamosan. Üres oldal: a sötét képpontok aránya a küszöb alatt. Forgatás: a négy irány OCR-jének összevetése.
+   párhuzamosan. Üres oldal: a sötét képpontok aránya a küszöb alatt, *és* az OCR is ezt mondja
+   (`PageAnalyzer.IsBlankPalePage`): 30-nál kevesebb olvasható szó, vagy hőpapír-felirat (a nyugták színes hátoldala
+   szöveg, de nem tartalom). A sötét képpont önmagában kevés: a halvány nyomaton (indigó, tűmátrix) nincs ilyen. Mért
+   értékek 1304 oldalon: 342 lapon 0 szó, átütésnél és logóknál legfeljebb 19, halvány számlán 140+. A halvány, de
+   tartalmas lap mellé rögtön egy 2× kontrasztos olvasat is készül, mert a vevő cég felismerése az újraolvasás előtt
+   fut. Forgatás: a négy irány OCR-jének összevetése.
 2. **Surya minden oldalra** (ha *Minden oldal* mód): külön olvasatként (`PageInfo.Readings`).
 3. **Szétbontás** (`InvoiceProcessor.BuildDocuments`): új számla, ha sablon ismeri fel az első oldalt, ha a vevő cég
    szerepel rajta (beállítható), vagy ha számlacím áll rajta; a folytatólap-kulcsszavak és mellékletcímek ezt
@@ -105,7 +110,7 @@ InvoiceSorterServerManager.exe --data D:\proba\szerver --screenshots D:\kepek
 7. **Pontszám** (`TrustScorer`), duplikátumok, „nem számla” címek.
 
 A **vevő cég** (`ReceiverDetector`) az 1. lépés után dől el: a beállított cég, amelynek adószáma a legtöbb oldalon
-szerepel. Javaslat (be nem állított cég): az adószám az oldalak legalább ötödén és legalább `min(3, oldalak)` oldalon,
+szerepel. Javaslat (be nem állított cég): az adószám az oldalak legalább ötödén és legalább `min(3, oldalak fele)` oldalon,
 több mint kétszer annyi oldalon, mint a legjobb beállított cég; 3+ oldalon nem lehet többször eladói blokkban
 („Szállító”, „Eladó” …), mint vevőiben, 1–2 oldalon pedig a „Vevő” típusú címke alatt kell állnia. A nevét a
 `InvoiceProcessor.NameSuggestedReceiverAsync` a cégnyilvántartásból adja. Központi módban a felvétel a szerver
@@ -248,6 +253,7 @@ dotnet test tests/InvoiceSorter.Tests
 ```
 InvoiceSorter.Cli process <szkennelés.pdf> [--out <mappa>] [--styles <f>] [--settings <f>]   teljes futás
 InvoiceSorter.Cli reprocess <workDir> [--out <mappa>] [--xlsx <f>]   újra szétbontás a meglévő OCR-ből (+ Excel-jelentés)
+InvoiceSorter.Cli ocr <szkennelés.pdf> --verbose            csak az OCR (üres oldalak vizsgálata, számlák és újraolvasás nélkül)
 InvoiceSorter.Cli dump <workDir> <oldal>                    OCR-szavak koordinátákkal
 InvoiceSorter.Cli test <workDir> <oldal> [--all]            melyik sablon hogyan olvassa az oldalt
 InvoiceSorter.Cli suggest <workDir> [--all]                 javaslatok a hibás számlák kibocsátójára / számlaszámára

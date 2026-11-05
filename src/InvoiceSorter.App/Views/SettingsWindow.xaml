@@ -296,7 +296,7 @@
                             <StackPanel Orientation="Horizontal" Margin="28,0,0,10">
                                 <TextBlock Text="Üres az oldal, ha a sötét képpontok aránya" VerticalAlignment="Center" Margin="0,0,8,0" />
                                 <TextBox Text="{Binding BlankThresholdPercent}" Width="70" />
-                                <TextBlock Text="% alatt van" VerticalAlignment="Center" Margin="8,0,0,0" />
+                                <TextBlock Text="% alatt van, és az OCR sem olvas rajta szöveget" VerticalAlignment="Center" Margin="8,0,0,0" />
                             </StackPanel>
                             <CheckBox IsChecked="{Binding Settings.AutoRotate}">
                                 <TextBlock TextWrapping="Wrap" Text="Az elforgatott / fejjel lefelé álló oldalak automatikus kiegyenesítése" />

@@ -42,6 +42,16 @@ switch (args[0])
         Finish(job);
         break;
     }
+    case "ocr":
+    {
+        // ocr <source.pdf> --verbose: only the OCR of the pages (blank page check, no invoices, no re-reading).
+        var job = new InvoiceJob { SourcePath = args[1], WorkDir = AppPaths.CreateJobDir() };
+        using var analyzer = await PageAnalyzer.OpenAsync(args[1], settings.OcrLanguage);
+        await analyzer.AnalyzeAllAsync(job, settings, null, CancellationToken.None);
+        JobCache.Save(job);
+        Console.WriteLine($"Work dir: {job.WorkDir}");
+        break;
+    }
     case "reprocess":
     {
         var job = JobCache.Load(args[1]);

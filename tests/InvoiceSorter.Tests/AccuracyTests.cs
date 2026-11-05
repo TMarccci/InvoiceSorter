@@ -291,4 +291,15 @@ public class AccuracyTests
             foreach (var f in Directory.EnumerateFiles(Path.GetTempPath(), Path.GetFileNameWithoutExtension(path) + "*")) File.Delete(f);
         }
     }
+
+    [Theory]
+    [InlineData(0, "", true)]                                                                   // nothing on the page
+    [InlineData(19, "Gyártó Felhasználható", true)]                                             // show-through, logos: a few garbage words
+    [InlineData(142, "Fiz. mód Teljesítés Termék megnevezés Bruttó érték", false)]              // pale print: an invoice, not a blank page
+    [InlineData(185, "Következő bevásárlásod online", false)]                                   // unsure: it stays visible
+    [InlineData(232, "A hőpapír pénztárgép vagy taxaméter hőnyomtatóban használható", true)]    // the back of a till receipt
+    [InlineData(100, "A hôpapir vagy taxaméter hönyomtatóban", true)]                           // ... with OCR mistakes
+    [InlineData(150, "Pénztárgép szerviz díja", false)]                                         // the word alone is no notice
+    public void APalePageIsBlankOnlyIfTheOcrAgrees(int words, string text, bool blank) =>
+        Assert.Equal(blank, PageAnalyzer.IsBlankPalePage(words, text));
 }

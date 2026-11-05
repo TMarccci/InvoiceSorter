@@ -48,14 +48,15 @@ tetején sárga sáv jelzi („Az oldalak többsége … nevére szól”), a **
 pedig egy kattintással felveszi (a nevét a cégnyilvántartásból veszi) és újraellenőrzi a számlákat. Központi módban
 a cég a szerverre kerül, így minden gép megkapja; ha a szerver nem érhető el, a program szól, és a cég erre a
 feldolgozásra érvényes marad. A javaslathoz az kell, hogy az adószám az oldalak legalább ötödén (nagy kötegnél
-legalább 3 oldalon) szerepeljen; egy-két oldalas szkennelésnél akkor is megjelenik, ha az adószám a „Vevő” címke
-alatt áll.
+legalább 3 oldalon) szerepeljen; kis kötegnél az oldalak felén is elég, ha az adószám a „Vevő” címke alatt áll.
 
 ### 2–3. Számlákra bontás, adatok olvasása és ellenőrzés
 
 A *Feldolgozás indítása* után a program:
 
-- minden oldalt beolvas (Windows OCR); az üres oldalakat elhagyja, az elforgatottakat kiegyenesíti;
+- minden oldalt beolvas (Windows OCR); az üres oldalakat elhagyja, az elforgatottakat kiegyenesíti. Üres az az oldal,
+  amelyen nincs sötét képpont, és az OCR sem olvas rajta legalább 30 szót, így a halvány (pl. indigós, tűmátrixos)
+  számlák nem vesznek el; a hőpapíros nyugták színes hátoldala viszont üresnek számít;
 - új számlát kezd, ha egy oldalt felismer egy **sablon**, ha szerepel rajta a vevő cég, vagy ha számlacím áll rajta
   („Számla”, „Egyszerűsített számla”, „Készpénzfizetési számla” …);
 - a többi oldalt (reklámos hátoldal, folytatólap, ÁSZF) az előző számlához csatolja; az egymás utáni azonos

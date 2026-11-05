@@ -78,6 +78,10 @@ public class MultiCompanyTests
         d = ReceiverDetector.Detect(new[] { ShortScanPage(0, "11223346-2-41") }, settings);
         Assert.Equal("99991032-2-42", d.Suggestion?.VatNumber);
 
+        // ... also when only the first page of a two-page invoice has it ...
+        d = ReceiverDetector.Detect(new[] { ShortScanPage(0, "11223346-2-41"), Page(1, ("Oldal:", 0.8, 0.03), ("2", 0.85, 0.03)) }, settings);
+        Assert.Equal("99991032-2-42", d.Suggestion?.VatNumber);
+
         // ... but a number without a buyer label (here the supplier's) is never suggested from 1-2 pages.
         var unlabelled = Page(0, ("Alfa", 0.28, 0.04), ("Kft.", 0.33, 0.04), ("Adószám:", 0.28, 0.083), ("11223346-2-41", 0.36, 0.083));
         Assert.Null(ReceiverDetector.Detect(new[] { unlabelled }, settings).Suggestion);
